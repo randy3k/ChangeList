@@ -8,8 +8,11 @@ class JumpToChangeCommand(sublime_plugin.TextCommand):
 	def run(self, _, move):
 		view = self.view
 		vid = view.id()
+		curr_row = view.rowcol(view.sel()[0].end())[0]
 		if not EDTLOC.has_key(vid): return
 		RECINX = len(EDTLOC[vid])-1
+		# if the cursor has moved, set move = 0
+		if (CURINX[vid]==RECINX) & (move==-1) & (curr_row != EDTLOC[vid][RECINX][0]): move = 0
 		NEWINX = CURINX[vid]+move
 		if (NEWINX<0)| (NEWINX>RECINX): return
 		pos = EDTLOC[vid][NEWINX]
@@ -32,6 +35,7 @@ class ChangeList(sublime_plugin.EventListener):
 			EDTLOC[vid] = [map(int, item.split(",")) for item in settings.get(vname).split("|")]
 			CURINX[vid] = len(EDTLOC[vid])-1
 		except:
+			EDTLOC[vid] = []
 			CURINX[vid] = 0
 		FILENOL[vid] = filenol	
 
