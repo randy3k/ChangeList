@@ -1,9 +1,8 @@
 import sublime, sublime_plugin
-import re
 
-CHGPOS = {}
-LASTLINE = {}
-CURINX = {}
+if not 'CHGPOS' in globals(): CHGPOS = {}
+if not 'LASTLINE' in globals(): LASTLINE = {}
+if not 'CURINX' in globals(): CURINX = {}
 
 class PreviousChangeCommand(sublime_plugin.TextCommand):
 	def run(self,_):
