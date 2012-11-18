@@ -41,11 +41,15 @@ class ChangeList(sublime_plugin.EventListener):
 	def on_load(self, view):
 		vid = view.id()
 		vname = view.file_name()
+		# current num of lines
+		filenol = view.rowcol(view.size())[0]		
 		try:		
 			settings = sublime.load_settings('%s.sublime-settings' % __name__)
 			EDTLOC[vid] = [map(int, item.split(",")) for item in settings.get(vname).split("|")]
-		finally:
-			print("new file")
+			CURINX[vid] = len(EDTLOC[vid])-1
+		except:
+			CURINX[vid] = 0
+		FILENOL[vid] = filenol	
 
 	def on_modified(self, view):
 		vid = view.id()
