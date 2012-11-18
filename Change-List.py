@@ -32,13 +32,13 @@ class NextChangeCommand(sublime_plugin.TextCommand):
 
 class ChangeList(sublime_plugin.EventListener):
 	def on_load(self, view):
-		print("initialize")
+		# print("initialize")
 		vid = view.id()
 		vname = view.file_name()		
 		settings = sublime.load_settings('%s.sublime-settings' % __name__)
 		CHGPOS[vid] = [map(int, item.split(",")) for item in settings.get(vname).split("|")]
 		CURINX[vid] = 0
-		print(CHGPOS)
+		# print(CHGPOS)
 
 	def on_modified(self, view):
 		vid = view.id()
@@ -73,7 +73,7 @@ class ChangeList(sublime_plugin.EventListener):
 
 		if len(CHGPOS[vid])>20:
 			CHGPOS[vid].pop()
-		print(CHGPOS)
+		# print(CHGPOS)
 
 	def on_post_save(self, view):
 		vid = view.id()
