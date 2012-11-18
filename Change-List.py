@@ -1,17 +1,22 @@
 import sublime, sublime_plugin
 
-if not 'EDTLOC' in globals(): EDTLOC = {} # to store edited locations
-if not 'FILENOL' in globals(): FILENOL = {} # to store num of lines
-if not 'CURINX' in globals(): CURINX = {} # to store current location index
+# to store edited locations
+if not 'EDTLOC' in globals(): EDTLOC = {}
+# to store num of lines
+if not 'FILENOL' in globals(): FILENOL = {}
+# to store current location index
+if not 'CURINX' in globals(): CURINX = {}
+# to store current location index
+if not 'SLTDLINE' in globals(): SLTDLINE = {}
 
 class JumpToChangeCommand(sublime_plugin.TextCommand):
 	def run(self, _, move):
 		view = self.view
 		vid = view.id()
 		curr_row = view.rowcol(view.sel()[0].end())[0]
-		if not EDTLOC.has_key(vid): return
+		if (not EDTLOC.has_key(vid)) | (not EDTLOC[vid]): return
 		RECINX = len(EDTLOC[vid])-1
-		# if the cursor has moved, set move = 0
+		# if the cursor has moved away from the recent edited location, set move = 0
 		if (CURINX[vid]==RECINX) & (move==-1) & (curr_row != EDTLOC[vid][RECINX][0]): move = 0
 		NEWINX = CURINX[vid]+move
 		if (NEWINX<0)| (NEWINX>RECINX): return
@@ -39,23 +44,26 @@ class ChangeList(sublime_plugin.EventListener):
 			CURINX[vid] = 0
 		FILENOL[vid] = filenol	
 
+	# required for detecting deleted selections
+	def on_selection_modified(self, view):
+		vid = view.id()
+		SLTDLINE[vid] = view.sel()
+
 	def on_modified(self, view):
 		vid = view.id()
 		curr_row, curr_col = view.rowcol(view.sel()[0].end())
 		# current num of lines
 		filenol = view.rowcol(view.size())[0]
 
-		if not EDTLOC.has_key(vid):
-			EDTLOC[vid] = []
-		if not FILENOL.has_key(vid):
-			FILENOL[vid] = filenol
+		if not EDTLOC.has_key(vid): EDTLOC[vid] = []
+		if not FILENOL.has_key(vid): FILENOL[vid] = filenol
 
 		if EDTLOC[vid]:
 			# if num of lines changes
 			if FILENOL[vid] != filenol:
 				# change in num of lines
 				delta = filenol-FILENOL[vid]
-				# change rows that is after the current line
+				# update rows that is after the current line
 				EDTLOC[vid] = map(lambda pos: [pos[0]+delta*(pos[0] >= curr_row), pos[1]], EDTLOC[vid])
 				# drop position if position is invalid
 				EDTLOC[vid] = filter(lambda pos: (pos[0]>=0) & (pos[0]<=filenol), EDTLOC[vid])
