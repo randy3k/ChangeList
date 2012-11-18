@@ -1,0 +1,8 @@
+[
+  { "keys": ["super+;"], "command": "previous_change"},
+  { "keys": ["super+,"], "command": "next_change"},
+  {	"keys": ["g",";"], "command": "previous_change",
+  	"context": [{"key": "setting.command_mode"}]},
+  {	"keys": ["g",","], "command": "next_change",
+  	"context": [{"key": "setting.command_mode"}]}
+]
