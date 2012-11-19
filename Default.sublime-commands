@@ -5,6 +5,6 @@
     },
     {
         "caption": "Change List",
-        "command": "change_list_panel"
+        "command": "show_change_list"
     }
 ]
