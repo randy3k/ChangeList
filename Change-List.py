@@ -29,19 +29,27 @@ class JumpToChangeCommand(sublime_plugin.TextCommand):
 		sublime.status_message(msg)
 
 class ChangeList(sublime_plugin.EventListener):
+
+	def initialize(self,view):
+		vid = view.id()
+		vname = view.file_name()
+		file_nol = view.rowcol(view.size())[0]			
+		if not EPOS.has_key(vid): EPOS[vid] = []
+		if not CURINX.has_key(vid): CURINX[vid] = 0		
+		if not FILENOL.has_key(vid): FILENOL[vid] = file_nol	
+
 	def on_load(self, view):
 		vid = view.id()
 		vname = view.file_name()
 		# current num of lines
-		file_nol = view.rowcol(view.size())[0]		
+	
 		try:		
 			settings = sublime.load_settings('%s.sublime-settings' % __name__)
 			EPOS[vid] = [map(int, item.split(",")) for item in settings.get(vname).split("|")]
 			CURINX[vid] = len(EPOS[vid])-1
-		except:
-			EPOS[vid] = []
-			CURINX[vid] = 0
-		FILENOL[vid] = file_nol	
+		finally:
+			self.initialize(view)
+
 
 	# required for detecting deleted selections
 	def on_selection_modified(self, view):
@@ -55,6 +63,8 @@ class ChangeList(sublime_plugin.EventListener):
 		curr_pos = map(lambda s: map(int, view.rowcol(s.end())) ,view.sel())
 		# current num of lines
 		file_nol = view.rowcol(view.size())[0]
+
+		self.initialize(view)
 
 		if EPOS[vid]:
 			# if num of lines changes
@@ -89,7 +99,7 @@ class ChangeList(sublime_plugin.EventListener):
 			EPOS[vid] = [curr_pos[0]]
 
 		CURINX[vid] = len(EPOS[vid])-1
-		print(EPOS[vid])
+		# print(EPOS[vid])
 
 
 	def on_post_save(self, view):
