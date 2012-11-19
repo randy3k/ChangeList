@@ -72,17 +72,19 @@ class ChangeList(sublime_plugin.EventListener):
 				# print(deltas)
 				for i, delta in enumerate(deltas):
 					# drop pos
-					if (delta<0) & (i==0):
+					if (delta<0):
 							EPOS[vid] = \
 								filter(lambda pos: (pos[0]<curr_pos[i][0]) | (pos[0]>SELROW[vid][i]), EPOS[vid])
 					# update pos that is after the current line
+					SELROW[vid] = \
+						map(lambda row: row+delta*(row >= SELROW[vid][i]) , SELROW[vid])					
 					EPOS[vid] = \
-						map(lambda pos: [pos[0]+delta*(pos[0] >= max(SELROW[vid][i],curr_pos[i][0])), pos[1]], EPOS[vid])
+						map(lambda pos: [pos[0]+delta*(pos[0] >= SELROW[vid][i]), pos[1]], EPOS[vid])
 						
 				# drop position if position is invalid
 				EPOS[vid] = filter(lambda pos: (pos[0]>=0) & (pos[0]<=file_nol), EPOS[vid])
 				# update num of lines
-				FILENOL[vid] = file_nol		
+				FILENOL[vid] = file_nol
 
 		if EPOS[vid]:
 			RECINX = len(EPOS[vid])-1
@@ -96,7 +98,7 @@ class ChangeList(sublime_plugin.EventListener):
 			EPOS[vid] = [curr_pos[0]]
 
 		CURINX[vid] = len(EPOS[vid])-1
-		print(EPOS[vid])
+		# print(map(lambda x: [x[0]+1,x[1]+1], EPOS[vid]))
 
 
 	def on_post_save(self, view):
