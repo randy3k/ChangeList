@@ -30,7 +30,7 @@ class JumpToChangeCommand(sublime_plugin.TextCommand):
 
 class ChangeList(sublime_plugin.EventListener):
 
-	def initialize(self,view):
+	def check_globals(self,view):
 		vid = view.id()
 		vname = view.file_name()
 		file_nol = view.rowcol(view.size())[0]			
@@ -41,15 +41,12 @@ class ChangeList(sublime_plugin.EventListener):
 	def on_load(self, view):
 		vid = view.id()
 		vname = view.file_name()
-		# current num of lines
-	
 		try:		
 			settings = sublime.load_settings('%s.sublime-settings' % __name__)
 			EPOS[vid] = [map(int, item.split(",")) for item in settings.get(vname).split("|")]
 			CURINX[vid] = len(EPOS[vid])-1
 		finally:
-			self.initialize(view)
-
+			self.check_globals(view)
 
 	# required for detecting deleted selections
 	def on_selection_modified(self, view):
@@ -64,7 +61,7 @@ class ChangeList(sublime_plugin.EventListener):
 		# current num of lines
 		file_nol = view.rowcol(view.size())[0]
 
-		self.initialize(view)
+		self.check_globals(view)
 
 		if EPOS[vid]:
 			# if num of lines changes
@@ -72,7 +69,7 @@ class ChangeList(sublime_plugin.EventListener):
 				deltas = map(lambda x,y: x[0]-y, curr_pos, SELROW[vid])
 				deltas = [int(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
 				deltas = [int(file_nol-FILENOL[vid]-sum(deltas))] + deltas
-				print(deltas)
+				# print(deltas)
 				for i, delta in enumerate(deltas):
 					# drop pos
 					if (delta<0) & (i==0):
@@ -99,7 +96,7 @@ class ChangeList(sublime_plugin.EventListener):
 			EPOS[vid] = [curr_pos[0]]
 
 		CURINX[vid] = len(EPOS[vid])-1
-		# print(EPOS[vid])
+		print(EPOS[vid])
 
 
 	def on_post_save(self, view):
