@@ -1,4 +1,5 @@
 import sublime, sublime_plugin
+import os
 
 # to store edited locations
 if not 'EPOS' in globals(): EPOS = {}
@@ -13,7 +14,8 @@ class JumpToChangeCommand(sublime_plugin.TextCommand):
 		view = self.view
 		vid = view.id()
 		curr_row = view.rowcol(view.sel()[0].end())[0]
-		if (not EPOS.has_key(vid)) | (not EPOS[vid]): return
+		if not EPOS.has_key(vid): return
+		if not EPOS[vid]: return
 		RECINX = len(EPOS[vid])-1
 		# if the cursor has moved away from the recent edited location, set move = 0
 		if (CURINX[vid]==RECINX) & (move==-1) & (curr_row != EPOS[vid][RECINX][0]): move = 0
@@ -28,25 +30,50 @@ class JumpToChangeCommand(sublime_plugin.TextCommand):
 		msg = "@Change List [" + str(RECINX-CURINX[vid]) + "]"
 		sublime.status_message(msg)
 
-class ChangeList(sublime_plugin.EventListener):
+class ClearChangeList(sublime_plugin.WindowCommand):
+	def run(self):
+		self.view = self.window.active_view()
+		try:
+			fname = os.path.basename(self.view.file_name())
+		except:
+			fname = "New file"
+		self.window.show_quick_panel(["This file - " + fname, "All file"], self.on_done)
+	
+	def on_done(self, action):	
+		global EPOS
+		if action==0:
+			vid = self.view.id()				
+			settings = sublime.load_settings('%s.sublime-settings' % __name__)	
+			try:
+				vname = self.view.file_name()
+				if settings.has(vname): settings.erase(vname)	
+			except:
+				True
+			sublime.save_settings('%s.sublime-settings' % __name__)
+			sublime.status_message("Clear Change List (this file) successfually.")
+	  		if EPOS.has_key(vid): EPOS[vid] = []
+	  	else:
+	  		try:
+	  			path = sublime.packages_path() + "/User/" + '%s.sublime-settings' % __name__
+	  			if os.path.exists(path): os.remove(path)
+	  		except (OSError, IOError):
+	  			sublime.error_message("Error occurred while clearing Change List!")
+	  			return False
+    		sublime.status_message("Clear Change List (all file) successfually.")
+    		EPOS  = {}
 
-	def check_globals(self,view):
-		vid = view.id()
-		vname = view.file_name()
-		file_nol = view.rowcol(view.size())[0]			
-		if not EPOS.has_key(vid): EPOS[vid] = []
-		if not CURINX.has_key(vid): CURINX[vid] = 0		
-		if not FILENOL.has_key(vid): FILENOL[vid] = file_nol	
+
+class ChangeList(sublime_plugin.EventListener):
 
 	def on_load(self, view):
 		vid = view.id()
 		vname = view.file_name()
-		try:		
-			settings = sublime.load_settings('%s.sublime-settings' % __name__)
+		settings = sublime.load_settings('%s.sublime-settings' % __name__)
+		if settings.has(vname):
 			EPOS[vid] = [map(int, item.split(",")) for item in settings.get(vname).split("|")]
-			CURINX[vid] = len(EPOS[vid])-1
-		finally:
-			self.check_globals(view)
+		else:
+			EPOS[vid] = []
+		CURINX[vid] = len(EPOS[vid])-1
 
 	# required for detecting deleted selections
 	def on_selection_modified(self, view):
@@ -61,10 +88,9 @@ class ChangeList(sublime_plugin.EventListener):
 		# current num of lines
 		file_nol = view.rowcol(view.size())[0]
 
-		self.check_globals(view)
-
 		if EPOS[vid]:
 			# if num of lines changes
+			if not FILENOL.has_key(vid): FILENOL[vid] = file_nol
 			if FILENOL[vid] != file_nol:
 				deltas = map(lambda x,y: x[0]-y, curr_pos, SELROW[vid])
 				deltas = [int(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
@@ -77,9 +103,9 @@ class ChangeList(sublime_plugin.EventListener):
 								filter(lambda pos: (pos[0]<curr_pos[i][0]) | (pos[0]>SELROW[vid][i]), EPOS[vid])
 					# update pos that is after the current line
 					SELROW[vid] = \
-						map(lambda row: row+delta*(row >= SELROW[vid][i]) , SELROW[vid])					
+						map(lambda row: row+delta*(row > SELROW[vid][i]) , SELROW[vid])					
 					EPOS[vid] = \
-						map(lambda pos: [pos[0]+delta*(pos[0] >= SELROW[vid][i]), pos[1]], EPOS[vid])
+						map(lambda pos: [pos[0]+delta*(pos[0] > SELROW[vid][i]), pos[1]], EPOS[vid])
 						
 				# drop position if position is invalid
 				EPOS[vid] = filter(lambda pos: (pos[0]>=0) & (pos[0]<=file_nol), EPOS[vid])
@@ -98,7 +124,7 @@ class ChangeList(sublime_plugin.EventListener):
 			EPOS[vid] = [curr_pos[0]]
 
 		CURINX[vid] = len(EPOS[vid])-1
-		# print(map(lambda x: [x[0]+1,x[1]+1], EPOS[vid]))
+		print(map(lambda x: [x[0]+1,x[1]+1], EPOS[vid]))
 
 
 	def on_post_save(self, view):
@@ -110,6 +136,7 @@ class ChangeList(sublime_plugin.EventListener):
 
 	def on_close(self, view):
 		vid = view.id()	
-		EPOS.pop(vid)
-		FILENOL.pop(vid)
-		CURINX.pop(vid)
+		if EPOS.has_key(vid): EPOS.pop(vid)
+		if FILENOL.has_key(vid): FILENOL.pop(vid)
+		if CURINX.has_key(vid): CURINX.pop(vid)
+		if SELROW.has_key(vid): SELROW.pop(vid)
