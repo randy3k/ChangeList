@@ -47,24 +47,33 @@ class ChangeList(sublime_plugin.EventListener):
 	# required for detecting deleted selections
 	def on_selection_modified(self, view):
 		vid = view.id()
-		SLTDLINE[vid] = view.sel()
+		# get the current multi cursor locations
+		SLTDLINE[vid] = map(lambda s: view.rowcol(s.end())[0] ,view.sel())
 
 	def on_modified(self, view):
 		vid = view.id()
 		curr_row, curr_col = view.rowcol(view.sel()[0].end())
 		# current num of lines
 		filenol = view.rowcol(view.size())[0]
-
+		sltdline = map(lambda s: view.rowcol(s.end())[0] ,view.sel())
 		if not EDTLOC.has_key(vid): EDTLOC[vid] = []
 		if not FILENOL.has_key(vid): FILENOL[vid] = filenol
 
 		if EDTLOC[vid]:
 			# if num of lines changes
 			if FILENOL[vid] != filenol:
-				# change in num of lines
-				delta = filenol-FILENOL[vid]
-				# update rows that is after the current line
-				EDTLOC[vid] = map(lambda pos: [pos[0]+delta*(pos[0] >= curr_row), pos[1]], EDTLOC[vid])
+				deltas = map(lambda x,y: x-y, sltdline, SLTDLINE[vid])
+				deltas = [deltas[0]]+[x - deltas[i - 1] for i, x in enumerate(deltas) if i>0]
+				print(deltas)
+				for i, delta in enumerate(deltas):
+					# drop pos
+					if delta<0:
+						EDTLOC[vid] = \
+							filter(lambda pos: (pos[0]<=sltdline[i]) | (pos[0]>SLTDLINE[vid][i]), EDTLOC[vid])
+					# update pos that is after the current line
+					EDTLOC[vid] = \
+						map(lambda pos: [pos[0]+delta*(pos[0] >= max(SLTDLINE[vid][i],sltdline[i])), pos[1]], EDTLOC[vid])
+						
 				# drop position if position is invalid
 				EDTLOC[vid] = filter(lambda pos: (pos[0]>=0) & (pos[0]<=filenol), EDTLOC[vid])
 				# update num of lines
@@ -81,7 +90,7 @@ class ChangeList(sublime_plugin.EventListener):
 		if len(EDTLOC[vid])>50:
 			EDTLOC[vid].pop(0)
 		CURINX[vid] = len(EDTLOC[vid])-1			
-		# print(EDTLOC[vid])
+		print(EDTLOC[vid])
 
 	def on_post_save(self, view):
 		vid = view.id()
