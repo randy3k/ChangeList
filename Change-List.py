@@ -6,7 +6,7 @@ if not 'EPOS' in globals(): EPOS = {}
 # to store num of lines
 if not 'FILENOL' in globals(): FILENOL = {}
 # to store current index
-if not 'CURINX' in globals(): CURINX = {}
+if not 'CURIDX' in globals(): CURIDX = {}
 if not 'SELROW' in globals(): SELROW = {}
 
 class JumpToChangeCommand(sublime_plugin.TextCommand):
@@ -16,18 +16,18 @@ class JumpToChangeCommand(sublime_plugin.TextCommand):
 		curr_row = view.rowcol(view.sel()[0].end())[0]
 		if not EPOS.has_key(vid): return
 		if not EPOS[vid]: return
-		RECINX = len(EPOS[vid])-1
+		RECIDX = len(EPOS[vid])-1
 		# if the cursor has moved away from the recent edited location, set move = 0
-		if (CURINX[vid]==RECINX) & (move==-1) & (curr_row != EPOS[vid][RECINX][0]): move = 0
-		NEWINX = CURINX[vid]+move
-		if (NEWINX<0)| (NEWINX>RECINX): return
-		pos = EPOS[vid][NEWINX]
+		if (CURIDX[vid]==RECIDX) & (move==-1) & (curr_row != EPOS[vid][RECIDX][0]): move = 0
+		NEWIDX = CURIDX[vid]+move
+		if (NEWIDX<0)| (NEWIDX>RECIDX): return
+		pos = EPOS[vid][NEWIDX]
 		region = view.text_point(pos[0],pos[1])
 		view.sel().clear()
 		view.show(region)
 		view.sel().add(region)
-		CURINX[vid] = NEWINX
-		msg = "@Change List [" + str(RECINX-CURINX[vid]) + "]"
+		CURIDX[vid] = NEWIDX
+		msg = "@Change List [" + str(RECIDX-CURIDX[vid]) + "]"
 		sublime.status_message(msg)
 
 class ClearChangeList(sublime_plugin.WindowCommand):
@@ -73,7 +73,7 @@ class ChangeList(sublime_plugin.EventListener):
 			EPOS[vid] = [map(int, item.split(",")) for item in settings.get(vname).split("|")]
 		else:
 			EPOS[vid] = []
-		CURINX[vid] = len(EPOS[vid])-1
+		CURIDX[vid] = len(EPOS[vid])-1
 
 	# required for detecting deleted selections
 	def on_selection_modified(self, view):
@@ -113,17 +113,17 @@ class ChangeList(sublime_plugin.EventListener):
 				FILENOL[vid] = file_nol
 
 		if EPOS[vid]:
-			RECINX = len(EPOS[vid])-1
-			if abs(EPOS[vid][RECINX][0] - curr_pos[0][0])>1:
+			RECIDX = len(EPOS[vid])-1
+			if abs(EPOS[vid][RECIDX][0] - curr_pos[0][0])>1:
 				EPOS[vid].append(curr_pos[0])
 			else:
-				EPOS[vid][RECINX] = curr_pos[0]	
+				EPOS[vid][RECIDX] = curr_pos[0]	
 
 			if len(EPOS[vid])>50: EPOS[vid].pop(0)
 		else:
 			EPOS[vid] = [curr_pos[0]]
 
-		CURINX[vid] = len(EPOS[vid])-1
+		CURIDX[vid] = len(EPOS[vid])-1
 		print(map(lambda x: [x[0]+1,x[1]+1], EPOS[vid]))
 
 
@@ -138,5 +138,5 @@ class ChangeList(sublime_plugin.EventListener):
 		vid = view.id()	
 		if EPOS.has_key(vid): EPOS.pop(vid)
 		if FILENOL.has_key(vid): FILENOL.pop(vid)
-		if CURINX.has_key(vid): CURINX.pop(vid)
+		if CURIDX.has_key(vid): CURIDX.pop(vid)
 		if SELROW.has_key(vid): SELROW.pop(vid)
