@@ -1,12 +1,13 @@
 Change List (Last Edit) for Sublime Text 2
 ====================
-It navigates between edited locations
+Navigating between edited locations!
 
 Introduction
 ------------
 This plugin aims at recovering the full functionality of Change-List of VI.
 * ``super+;`` or ``g;`` (vinage command mode): go the previous edited location
 * ``super+,`` or ``g,`` (vinage command mode): go the next edited location
+* Type ``Clear Change List`` in Command Palette to clear Change List.
 
 There are already a few other "LastEdit" plugins . For examples:
 * https://github.com/SamPeng87/sublime-last-edit
@@ -14,6 +15,7 @@ There are already a few other "LastEdit" plugins . For examples:
 * https://github.com/abrookins/GotoLastEdit
 * https://github.com/Stuk/sublime-edit-history
 * https://github.com/optilude/SublimeTextMisc/blob/master/navigationHistory.py
+* https://gist.github.com/1993147 
 
 However, they do not keep editing history after the file is saved and closed (as far as I can tell).<BR>
 This plugin allows you to navigate between edited locations even the computer is restarted.<BR>
@@ -28,12 +30,7 @@ Note that it overwrites the default keymap ``super+,`` for consistency.
 
 TODO
 -----------------------
-* Option to clear editing history.
 * A list of all history locations.
 * Don't update change list while undoing.
 * Multi cursor support is now limited, only the locataion of first cursor will be saved.
-  However, multi cursor editing will preserve the editing history.
-
-Thanks
------------------------
-https://gist.github.com/1993147 
+  However, multi cursor editing preserves the history.
