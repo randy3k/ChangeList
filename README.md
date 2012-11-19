@@ -7,8 +7,8 @@ Introduction
 ------------
 This plugin aims at recovering the full functionality of Change-List of VI.
 * Type ``Change List`` in Command Palette to show Change List panel.
-* ``super+;`` or ``g;`` (vinage command mode): go the previous edited location
-* ``super+,`` or ``g,`` (vinage command mode): go the next edited location
+* ``super+;`` or ``g;`` (vintage command mode): go the previous edited location
+* ``super+,`` or ``g,`` (vintage command mode): go the next edited location
 * Type ``Clear Change List`` in Command Palette to clear Change List.
 
 There are already a few other "LastEdit" plugins . For examples:

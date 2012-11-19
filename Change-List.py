@@ -79,7 +79,7 @@ class ClearChangeList(sublime_plugin.WindowCommand):
 	  		if EPOS.has_key(vid): EPOS[vid] = []
 	  	else:
 	  		try:
-	  			path = sublime.packages_path() + "/User/" + '%s.sublime-settings' % __name__
+	  			path = os.path.join(sublime.packages_path(), "User" , '%s.sublime-settings' % __name__)
 	  			if os.path.exists(path): os.remove(path)
 	  		except (OSError, IOError):
 	  			sublime.error_message("Error occurred while clearing Change List!")
