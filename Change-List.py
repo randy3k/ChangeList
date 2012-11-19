@@ -20,6 +20,12 @@ def GoToChange(view, i):
 	view.show_at_center(region)
 	view.sel().add(region)
 
+	# to reactivate sublime_plugin.WindowCommand.on_selection_modified()
+	# useful for plugin - SublimeBlockCursor
+	if view.settings().get('command_mode'): 
+		view.run_command("enter_insert_mode")
+		view.run_command("exit_insert_mode")
+
 	msg = "@Change List [" + str(RECIDX-CURIDX[vid]) + "]"
 	sublime.status_message(msg)
 
@@ -62,13 +68,13 @@ class ClearChangeList(sublime_plugin.WindowCommand):
 			fname = os.path.basename(self.view.file_name())
 		except:
 			fname = "New file"
-		self.window.show_quick_panel(["This file - " + fname, "All file"], self.on_done)
+		self.window.show_quick_panel([fname, "All files"], self.on_done)
 
-	def on_done(self, action):	
+	def on_done(self, action):
 		global EPOS
 		if action==0:
 			vid = self.view.id()
-			settings = sublime.load_settings('%s.sublime-settings' % __name__)	
+			settings = sublime.load_settings('%s.sublime-settings' % __name__)
 			try:
 				vname = self.view.file_name()
 				if settings.has(vname): settings.erase(vname)	
@@ -77,15 +83,18 @@ class ClearChangeList(sublime_plugin.WindowCommand):
 			sublime.save_settings('%s.sublime-settings' % __name__)
 			sublime.status_message("Clear Change List (this file) successfually.")
 	  		if EPOS.has_key(vid): EPOS[vid] = []
-	  	else:
+	  		return
+	  	elif action==1:
 	  		try:
 	  			path = os.path.join(sublime.packages_path(), "User" , '%s.sublime-settings' % __name__)
 	  			if os.path.exists(path): os.remove(path)
 	  		except (OSError, IOError):
 	  			sublime.error_message("Error occurred while clearing Change List!")
 	  			return False
-    		sublime.status_message("Clear Change List (all file) successfually.")
-    		EPOS  = {}
+	  		finally:
+	  			True
+	  		sublime.status_message("Clear Change List (all file) successfually.")
+	  		EPOS  = {}
     		
 class ChangeListener(sublime_plugin.EventListener):
 
