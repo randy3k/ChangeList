@@ -1,10 +1,12 @@
 Change List (Last Edit) for Sublime Text 2
 ====================
 Navigating between edited locations!
+<img src="https://github.com/randy3k/Change-List/raw/master/changelist.png">
 
 Introduction
 ------------
 This plugin aims at recovering the full functionality of Change-List of VI.
+* Type ``Change List`` in Command Palette to show Change List panel.
 * ``super+;`` or ``g;`` (vinage command mode): go the previous edited location
 * ``super+,`` or ``g,`` (vinage command mode): go the next edited location
 * Type ``Clear Change List`` in Command Palette to clear Change List.
@@ -30,7 +32,6 @@ Note that it overwrites the default keymap ``super+,`` for consistency.
 
 TODO
 -----------------------
-* A list of all history locations.
 * Don't update change list while undoing.
 * Multi cursor support is now limited, only the locataion of first cursor will be saved.
   However, multi cursor editing preserves the history.

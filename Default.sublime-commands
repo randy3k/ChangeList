@@ -1,0 +1,10 @@
+[
+    {
+        "caption": "Change List: Clear Change List",
+        "command": "clear_change_list"
+    },
+    {
+        "caption": "Change List",
+        "command": "change_list_panel"
+    }
+]
