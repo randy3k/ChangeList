@@ -38,15 +38,15 @@ class JumpToChangeCommand(sublime_plugin.TextCommand):
 		if (NEWIDX<0)| (NEWIDX>RECIDX): return
 		GoToChange(view, NEWIDX)
 
-class ChangeListPanel(sublime_plugin.WindowCommand):
+class ShowChangeList(sublime_plugin.WindowCommand):
 	def run(self):
 		view = self.window.active_view()
 		vid = view.id()
 		if not EPOS.has_key(vid): return
 		if not EPOS[vid]: return		
-		self.change_list = [ "[%2d] Line %s: %s" % (i, item[0]+1, 
-			view.substr(view.line(view.text_point(item[0],item[1]))))  for i,item in enumerate(reversed(EPOS[vid]))]
-		self.window.show_quick_panel(self.change_list, self.on_done)
+		change_list = [ "[%2d] Line %s: %s" % (i, item[0]+1, 
+			view.substr(view.line(view.text_point(item[0],item[1])))) for i,item in enumerate(reversed(EPOS[vid]))]
+		self.window.show_quick_panel(change_list, self.on_done)
 	
 	def on_done(self, action):
 		if action==-1: return
@@ -66,8 +66,8 @@ class ClearChangeList(sublime_plugin.WindowCommand):
 
 	def on_done(self, action):	
 		global EPOS
-		vid = self.view.id()		
 		if action==0:
+			vid = self.view.id()
 			settings = sublime.load_settings('%s.sublime-settings' % __name__)	
 			try:
 				vname = self.view.file_name()
@@ -85,7 +85,7 @@ class ClearChangeList(sublime_plugin.WindowCommand):
 	  			sublime.error_message("Error occurred while clearing Change List!")
 	  			return False
     		sublime.status_message("Clear Change List (all file) successfually.")
-    		EPOS  = {vid: []}
+    		EPOS  = {}
     		
 class ChangeListener(sublime_plugin.EventListener):
 
@@ -111,6 +111,7 @@ class ChangeListener(sublime_plugin.EventListener):
 		curr_pos = map(lambda s: map(int, view.rowcol(s.end())) ,view.sel())
 		# current num of lines
 		file_nol = view.rowcol(view.size())[0]
+		if not EPOS.has_key(vid): EPOS[vid]=[]
 
 		if EPOS[vid]:
 			# if num of lines changes
