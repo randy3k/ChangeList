@@ -63,7 +63,7 @@ class ClearChangeList(sublime_plugin.WindowCommand):
     		EPOS  = {}
 
 
-class ChangeList(sublime_plugin.EventListener):
+class ChangeListener(sublime_plugin.EventListener):
 
 	def on_load(self, view):
 		vid = view.id()
@@ -101,11 +101,11 @@ class ChangeList(sublime_plugin.EventListener):
 					if (delta<0):
 							EPOS[vid] = \
 								filter(lambda pos: (pos[0]<curr_pos[i][0]) | (pos[0]>SELROW[vid][i]), EPOS[vid])
-					# update pos that is after the current line
-					SELROW[vid] = \
-						map(lambda row: row+delta*(row > SELROW[vid][i]) , SELROW[vid])					
+					# update pos that is afterwards				
 					EPOS[vid] = \
 						map(lambda pos: [pos[0]+delta*(pos[0] > SELROW[vid][i]), pos[1]], EPOS[vid])
+					SELROW[vid] = \
+						map(lambda row: row+delta*(row > SELROW[vid][i]) , SELROW[vid])							
 						
 				# drop position if position is invalid
 				EPOS[vid] = filter(lambda pos: (pos[0]>=0) & (pos[0]<=file_nol), EPOS[vid])
