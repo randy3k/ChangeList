@@ -31,7 +31,8 @@ TODO
 * Option to clear editing history.
 * A list of all history locations.
 * Don't update change list while undoing.
-* Bugs fix
+* Multi cursor support is now limited, only the locataion of first cursor will be saved.
+  However, multi cursor editing will preserve the editing history.
 
 Thanks
 -----------------------
