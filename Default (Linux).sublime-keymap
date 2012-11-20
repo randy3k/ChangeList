@@ -1,8 +1,5 @@
 [
-  {	"keys": ["g",";"], "command": "jump_to_change", "args": {"move": 1},
-  	"context": [{"key": "setting.command_mode"}]},
-  {	"keys": ["g",","], "command": "jump_to_change", "args": {"move": -1},
-  	"context": [{"key": "setting.command_mode"}]},
   { "keys": ["ctrl+;"], "command": "jump_to_change", "args": {"move": 1}},
-  { "keys": ["ctrl+,"], "command": "jump_to_change", "args": {"move": -1}}  
+  { "keys": ["ctrl+,"], "command": "jump_to_change", "args": {"move": -1}},
+  { "keys": ["ctrl+."], "command": "jump_to_change", "args": {"index": 0}}  
 ]

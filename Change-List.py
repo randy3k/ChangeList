@@ -30,17 +30,21 @@ class CommandManager():
 		sublime.status_message("@Change List [%s]" % CURIDX[vid] )
 
 class JumpToChangeCommand(sublime_plugin.TextCommand,CommandManager):
-	def run(self, _, move):
+	def run(self, _, **kwargs):
 		view = self.view
 		vid = view.id()
 		if not EPOS.has_key(vid): return
 		if not EPOS[vid]: return
 		# if the cursor has moved away from the recent edited location, set move = 0
 		curr_pos = view.rowcol(view.sel()[0].end())		
-		if (CURIDX[vid]==0) & (move==1):
-			if (curr_pos[0] != EPOS[vid][0][0]): move = 0
-			elif abs(curr_pos[1] - EPOS[vid][0][1])>1: move = 0
-		self.GoToChange(CURIDX[vid]+move)
+		if not kwargs.has_key('index'):
+			move = kwargs['move']
+			if (CURIDX[vid]==0) & (move==1):
+				if (curr_pos[0] != EPOS[vid][0][0]): move = 0
+				elif abs(curr_pos[1] - EPOS[vid][0][1])>1: move = 0
+			self.GoToChange(CURIDX[vid]+move)
+		else:
+			self.GoToChange(kwargs['index'])
 
 class ShowChangeList(sublime_plugin.WindowCommand,CommandManager):
 	def run(self):

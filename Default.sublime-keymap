@@ -1,0 +1,8 @@
+[
+  {	"keys": ["g",";"], "command": "jump_to_change", "args": {"move": 1},
+  	"context": [{"key": "setting.command_mode"}]},
+  {	"keys": ["g",","], "command": "jump_to_change", "args": {"move": -1},
+  	"context": [{"key": "setting.command_mode"}]},
+  {	"keys": ["g","."], "command": "jump_to_change", "args": {"index": 0},
+  	"context": [{"key": "setting.command_mode"}]}
+]
