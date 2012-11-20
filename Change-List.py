@@ -11,6 +11,8 @@ if not 'FILESIZE' in globals(): FILESIZE = {}
 if not 'CURRIDX' in globals(): CURRIDX = {}
 # to store last multi cursors' positions
 if not 'MCURPOS' in globals(): MCURPOS = {}
+# to store last multi cursors' positions
+if not 'LASTROW' in globals(): LASTROW = {}
 
 class CommandManager():
     def GoToChange(self, i):
@@ -100,14 +102,17 @@ class ChangeListener(sublime_plugin.EventListener):
     def insert_curr_pos(self, view, ):
         vid = view.id()
         curr_pos = map(lambda s: s.end(), view.sel())
+        curr_row = view.rowcol(curr_pos[0])[0]
         if EPOS[vid]:
-            if abs(EPOS[vid][0] - curr_pos[0])>5:
+            if not LASTROW.has_key(vid): LASTROW[vid] = curr_row
+            if abs(curr_row - LASTROW[vid])>1:
                 EPOS[vid].insert(0,curr_pos[0])
             else:
                 EPOS[vid][0] = curr_pos[0]
             if len(EPOS[vid])>50: EPOS[vid].pop()
         else:
             EPOS[vid] = [curr_pos[0]]
+        LASTROW[vid] = curr_row
 
     def update_pos(self, view):
         vid = view.id()
@@ -118,13 +123,13 @@ class ChangeListener(sublime_plugin.EventListener):
         deltas = map(lambda x,y: x-y, curr_pos, MCURPOS[vid])
         deltas = [long(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
         deltas = [long(file_size-FILESIZE[vid]-sum(deltas))] + deltas
-        print(deltas)
+        # print(deltas)
         for i  in range(len(curr_pos)):
-            # drop rows
+            # drop positions
             delta = deltas[i]
             if delta<0 :
                 EPOS[vid] = [pos for pos in EPOS[vid] if pos<curr_pos[i] or pos>curr_pos[i]-delta]
-            # update rows
+            # update positions
             if delta!=0 :
                 EPOS[vid] = [pos+delta if pos > MCURPOS[vid][i] else pos for pos in EPOS[vid]]
                 MCURPOS[vid] = [pos+delta if pos > MCURPOS[vid][i] else pos for pos in MCURPOS[vid]]
@@ -176,3 +181,4 @@ class ChangeListener(sublime_plugin.EventListener):
         if FILESIZE.has_key(vid): FILESIZE.pop(vid)
         if CURRIDX.has_key(vid): CURRIDX.pop(vid)
         if MCURPOS.has_key(vid): MCURPOS.pop(vid)
+        if LASTROW.has_key(vid): LASTROW.pop(vid)
