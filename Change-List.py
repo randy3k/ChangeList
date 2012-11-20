@@ -42,7 +42,7 @@ class JumpToChangeCommand(sublime_plugin.TextCommand,CommandManager):
         curr_pos = view.rowcol(view.sel()[0].end())
         if not kwargs.has_key('index'):
             move = kwargs['move']
-            if (CURRIDX[vid]==0) & (move==1):
+            if CURRIDX[vid]==0 and move==1:
                 if (curr_pos[0] != EPOS[vid][0][0]): move = 0
                 elif abs(curr_pos[1] - EPOS[vid][0][1])>1: move = 0
             self.GoToChange(CURRIDX[vid]+move)
@@ -116,23 +116,36 @@ class ChangeListener(sublime_plugin.EventListener):
         file_nol = view.rowcol(view.size())[0]
         if not FILENOL.has_key(vid): FILENOL[vid] = file_nol
         # if num of lines changes
-        if FILENOL[vid] != file_nol:
-            deltas = map(lambda x,y: x[0]-y, curr_pos, MCURPOS[vid])
-            deltas = [int(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
-            deltas = [int(file_nol-FILENOL[vid]-sum(deltas))] + deltas
-            # print(deltas)
-            for i, delta in enumerate(deltas):
-                # drop positions
-                if (delta<0):
-                    EPOS[vid] = \
-                        filter(lambda pos: (pos[0]<curr_pos[i][0]) | (pos[0]>MCURPOS[vid][i]), EPOS[vid])
-                # update positions afterwards
-                EPOS[vid] = \
-                    map(lambda pos: [pos[0]+delta*(pos[0] > MCURPOS[vid][i]), pos[1]], EPOS[vid])
-                MCURPOS[vid] = \
-                    map(lambda row: row+delta*(row > MCURPOS[vid][i]) , MCURPOS[vid])
-            # drop position if position is invalid
-            EPOS[vid] = filter(lambda pos: (pos[0]>=0) & (pos[0]<=file_nol), EPOS[vid])
+        deltas = map(lambda x,y: x[0]-y[0], curr_pos, MCURPOS[vid])
+        deltas = [int(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
+        deltas = [int(file_nol-FILENOL[vid]-sum(deltas))] + deltas
+        cdeltas = map(lambda x,y: x[1]-y[1], curr_pos, MCURPOS[vid])
+        # print(deltas)
+        for i  in range(len(curr_pos)):
+            # drop rows
+            delta = deltas[i]
+            if delta<0 :
+                EPOS[vid] = [pos for pos in EPOS[vid] if pos[0]<curr_pos[i][0] or pos[0]>MCURPOS[vid][i][0]]
+            # update rows
+            if delta!=0 :
+                EPOS[vid] = [[pos[0]+delta, pos[1]] if pos[0] > MCURPOS[vid][i][0] \
+                    else pos for pos in EPOS[vid]]
+                MCURPOS[vid] = [[pos[0]+delta, pos[1]] if pos[0] > MCURPOS[vid][i][0] \
+                    else pos for pos in MCURPOS[vid]]
+
+            cdelta = cdeltas[i]
+            # drop cols
+            if cdelta<0 :
+                EPOS[vid] = [pos for pos in EPOS[vid] if \
+                    pos[0]!=MCURPOS[vid][i][0] or pos[1]<curr_pos[i][1] or pos[1]>MCURPOS[vid][i][1]]
+            # update cols
+            if cdelta!=0 :
+                EPOS[vid] = [[pos[0], pos[1]+cdelta] if pos[0]==curr_pos[i][0] and pos[1] > curr_pos[i][1] \
+                    else pos for pos in EPOS[vid]]
+
+        # drop position if position is not valid
+        eol = lambda pos: view.rowcol(view.line(view.text_point(pos[0],0)).end())[1]
+        EPOS[vid] = [[pos[0],eol(pos)] if eol(pos)<pos[1] else pos for pos in EPOS[vid] if pos[0]>=0 and pos[0]<=file_nol]
         # update num of lines
         FILENOL[vid] = file_nol
 
@@ -149,7 +162,7 @@ class ChangeListener(sublime_plugin.EventListener):
     def on_selection_modified(self, view):
         vid = view.id()
         # get the current multi cursor locations
-        MCURPOS[vid] = map(lambda s: int(view.rowcol(s.end())[0]) ,view.sel())
+        MCURPOS[vid] = map(lambda s: map(int, view.rowcol(s.end())) ,view.sel())
 
     def on_modified(self, view):
         # print(globals()w)
