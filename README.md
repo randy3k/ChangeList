@@ -6,10 +6,11 @@ Navigating between edited locations!
 Introduction
 ------------
 This plugin aims at recovering the full functionality of Change-List of VI.
-* Type ``Change List`` in Command Palette to show Change List panel.
-* ``super+;`` or ``g;`` (vintage command mode): go the previous edited location
-* ``super+,`` or ``g,`` (vintage command mode): go the next edited location
-* Type ``Clear Change List`` in Command Palette to clear Change List.
+* Run ``Change List`` in Command Palette to show Change List panel.
+* Run ``Clear Change List`` in Command Palette to clear Change List.
+* ``super+;`` or ``g;`` (vintage command mode): go to previous edited location
+* ``super+,`` or ``g,`` (vintage command mode): go to next edited location
+* ``super+.`` or ``g.`` (vintage command mode): go to the last edited location
 
 There are already a few other "LastEdit" plugins . For examples:
 * https://github.com/SamPeng87/sublime-last-edit
@@ -28,10 +29,14 @@ Note: It is not the Jump List. It means that the cursor always stays in the same
 
 Keymap
 ----------------------
-Note that it overwrites the default keymap ``super+,`` for consistency.
+It overwrites the default keymap ``super+,`` for consistency.<br>
+I wish to map <code>\`.</code> or ``'.`` to ``go to the last edited location``. 
+However vintage has used them for bookmarks and I couldn't overwrite them without touching vintage code.
 
-TODO
+Known issues
 -----------------------
-* Don't update change list while undoing.
-* Multi cursor support is now limited, only the locataion of first cursor will be saved.
+* Undo will change the history (ironic, huh!?). I have no idea on how to correct this at this moment.
+* Multi cursor support is now limited, only the location of first cursor will be saved.
   However, multi cursor editing preserves the history.
+* Line joining will result in losing all edit history of both lines. 
+It is done intentionally to avoid any possible problems which may occur.
