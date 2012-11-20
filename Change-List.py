@@ -9,59 +9,57 @@ if not 'FILENOL' in globals(): FILENOL = {}
 if not 'CURIDX' in globals(): CURIDX = {}
 if not 'SELROW' in globals(): SELROW = {}
 
-def GoToChange(view, i):
-	global CURIDX
-	vid = view.id()
-	RECIDX = len(EPOS[vid])-1
-	CURIDX[vid] = i
-	pos = EPOS[vid][CURIDX[vid]]
-	region = view.text_point(pos[0],pos[1])
-	view.sel().clear()
-	view.show_at_center(region)
-	view.sel().add(region)
+class CommandManager():	
+	def GoToChange(self, i):
+		view = self.view
+		vid = view.id()
+		if (i<0)| (i>len(EPOS[vid])-1): return		
+		CURIDX[vid] = i
+		pos = EPOS[vid][i]
+		region = view.text_point(pos[0],pos[1])
+		view.sel().clear()
+		view.show(region)
+		view.sel().add(region)
 
-	# to reactivate sublime_plugin.WindowCommand.on_selection_modified()
-	# useful for plugin - SublimeBlockCursor
-	if view.settings().get('command_mode'): 
-		view.run_command("enter_insert_mode")
-		view.run_command("exit_insert_mode")
+		# to reactivate sublime_plugin.WindowCommand.on_selection_modified()
+		# useful for plugin - SublimeBlockCursor
+		if view.settings().get('command_mode'): 
+			view.run_command("enter_insert_mode")
+			view.run_command("exit_insert_mode")
 
-	msg = "@Change List [" + str(RECIDX-CURIDX[vid]) + "]"
-	sublime.status_message(msg)
+		sublime.status_message("@Change List [%s]" % CURIDX[vid] )
 
-
-class JumpToChangeCommand(sublime_plugin.TextCommand):
+class JumpToChangeCommand(sublime_plugin.TextCommand,CommandManager):
 	def run(self, _, move):
 		view = self.view
 		vid = view.id()
-		curr_row = view.rowcol(view.sel()[0].end())[0]
 		if not EPOS.has_key(vid): return
 		if not EPOS[vid]: return
-		RECIDX = len(EPOS[vid])-1
 		# if the cursor has moved away from the recent edited location, set move = 0
-		if (CURIDX[vid]==RECIDX) & (move==-1) & (curr_row != EPOS[vid][RECIDX][0]): move = 0
-		NEWIDX = CURIDX[vid]+move
-		if (NEWIDX<0)| (NEWIDX>RECIDX): return
-		GoToChange(view, NEWIDX)
+		curr_pos = view.rowcol(view.sel()[0].end())		
+		if (CURIDX[vid]==0) & (move==1):
+			if (curr_pos[0] != EPOS[vid][0][0]): move = 0
+			elif abs(curr_pos[1] - EPOS[vid][0][1])>1: move = 0
+		self.GoToChange(CURIDX[vid]+move)
 
-class ShowChangeList(sublime_plugin.WindowCommand):
+class ShowChangeList(sublime_plugin.WindowCommand,CommandManager):
 	def run(self):
-		view = self.window.active_view()
+		self.view = self.window.active_view()
+		view = self.view
 		vid = view.id()
 		if not EPOS.has_key(vid): return
 		if not EPOS[vid]: return		
-		change_list = [ "[%2d] Line %s: %s" % (i, item[0]+1, 
-			view.substr(view.line(view.text_point(item[0],item[1])))) for i,item in enumerate(reversed(EPOS[vid]))]
+		change_list = [ "[%2d] Line %3d: %s" % (i, item[0]+1, 
+			view.substr(view.line(view.text_point(item[0],item[1])))) for i,item in enumerate(EPOS[vid])]
 		self.window.show_quick_panel(change_list, self.on_done)
 	
 	def on_done(self, action):
 		if action==-1: return
-		view = self.window.active_view()
-		vid = view.id()
-		RECIDX = len(EPOS[vid])-1
-		GoToChange(view, RECIDX-action)
+		print(self.view.id())
+		# view = self.window.active_view()
+		self.GoToChange(action)
 
-class ClearChangeList(sublime_plugin.WindowCommand):
+class ClearChangeList(sublime_plugin.WindowCommand,CommandManager):
 	def run(self):
 		self.view = self.window.active_view()
 		try:
@@ -78,12 +76,11 @@ class ClearChangeList(sublime_plugin.WindowCommand):
 			try:
 				vname = self.view.file_name()
 				if settings.has(vname): settings.erase(vname)	
-			except:
-				True
+			except: pass
+				
 			sublime.save_settings('%s.sublime-settings' % __name__)
 			sublime.status_message("Clear Change List (this file) successfually.")
 	  		if EPOS.has_key(vid): EPOS[vid] = []
-	  		return
 	  	elif action==1:
 	  		try:
 	  			path = os.path.join(sublime.packages_path(), "User" , '%s.sublime-settings' % __name__)
@@ -91,12 +88,23 @@ class ClearChangeList(sublime_plugin.WindowCommand):
 	  		except (OSError, IOError):
 	  			sublime.error_message("Error occurred while clearing Change List!")
 	  			return False
-	  		finally:
-	  			True
+	
 	  		sublime.status_message("Clear Change List (all file) successfually.")
 	  		EPOS  = {}
     		
 class ChangeListener(sublime_plugin.EventListener):
+
+	def update_pos(self, view, curr_pos):
+		vid = view.id()
+		if EPOS[vid]:
+			if abs(EPOS[vid][0][0] - curr_pos[0])>1:
+				EPOS[vid].insert(0,curr_pos)
+			else:
+				EPOS[vid][0] = curr_pos	
+
+			if len(EPOS[vid])>50: EPOS[vid].pop()
+		else:
+			EPOS[vid] = [curr_pos]
 
 	def on_load(self, view):
 		vid = view.id()
@@ -106,7 +114,7 @@ class ChangeListener(sublime_plugin.EventListener):
 			EPOS[vid] = [map(int, item.split(",")) for item in settings.get(vname).split("|")]
 		else:
 			EPOS[vid] = []
-		CURIDX[vid] = len(EPOS[vid])-1
+		CURIDX[vid] = 0
 
 	# required for detecting deleted selections
 	def on_selection_modified(self, view):
@@ -120,8 +128,10 @@ class ChangeListener(sublime_plugin.EventListener):
 		curr_pos = map(lambda s: map(int, view.rowcol(s.end())) ,view.sel())
 		# current num of lines
 		file_nol = view.rowcol(view.size())[0]
-		if not EPOS.has_key(vid): EPOS[vid]=[]
+		# reset current index
+		CURIDX[vid] = 0
 
+		if not EPOS.has_key(vid): EPOS[vid]=[]
 		if EPOS[vid]:
 			# if num of lines changes
 			if not FILENOL.has_key(vid): FILENOL[vid] = file_nol
@@ -130,12 +140,16 @@ class ChangeListener(sublime_plugin.EventListener):
 				deltas = [int(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
 				deltas = [int(file_nol-FILENOL[vid]-sum(deltas))] + deltas
 				# print(deltas)
+
+				# update num of lines
+				FILENOL[vid] = file_nol
+
 				for i, delta in enumerate(deltas):
 					# drop pos
 					if (delta<0):
 							EPOS[vid] = \
 								filter(lambda pos: (pos[0]<curr_pos[i][0]) | (pos[0]>SELROW[vid][i]), EPOS[vid])
-					# update pos that is afterwards
+					# update positions afterwards
 					EPOS[vid] = \
 						map(lambda pos: [pos[0]+delta*(pos[0] > SELROW[vid][i]), pos[1]], EPOS[vid])
 					SELROW[vid] = \
@@ -143,21 +157,10 @@ class ChangeListener(sublime_plugin.EventListener):
 						
 				# drop position if position is invalid
 				EPOS[vid] = filter(lambda pos: (pos[0]>=0) & (pos[0]<=file_nol), EPOS[vid])
-				# update num of lines
-				FILENOL[vid] = file_nol
 
-		if EPOS[vid]:
-			RECIDX = len(EPOS[vid])-1
-			if abs(EPOS[vid][RECIDX][0] - curr_pos[0][0])>1:
-				EPOS[vid].append(curr_pos[0])
-			else:
-				EPOS[vid][RECIDX] = curr_pos[0]	
+		# update position
+		self.update_pos(view, curr_pos[0])
 
-			if len(EPOS[vid])>50: EPOS[vid].pop(0)
-		else:
-			EPOS[vid] = [curr_pos[0]]
-
-		CURIDX[vid] = len(EPOS[vid])-1
 		# print(map(lambda x: [x[0]+1,x[1]+1], EPOS[vid]))
 
 
