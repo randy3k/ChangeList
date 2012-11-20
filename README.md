@@ -38,5 +38,3 @@ Known issues
 * Undo will change the history (ironic, huh!?). I have no idea on how to correct this at this moment.
 * Multi cursor support is now limited, only the location of first cursor will be saved.
   However, multi cursor editing preserves the history.
-* Line joining will result in losing all edit history of both lines. 
-It is done intentionally to avoid any possible problems which may occur.
