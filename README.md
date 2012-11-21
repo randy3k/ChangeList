@@ -1,16 +1,17 @@
 Change List (Last Edit) for Sublime Text 2
 ====================
-Navigating between edited locations!
+It remembers the locations where changes occurred.
 <img src="https://github.com/randy3k/Change-List/raw/master/changelist.png">
 
 Introduction
 ------------
-This plugin aims at recovering the full functionality of Change-List of VI.
-* Run ``Change List: Show`` in Command Palette to show Change List panel.
-* Run ``Change List: Clear`` in Command Palette to clear Change List.
-* ``super+;`` or ``g;`` (vintage command mode): go to previous edited location
-* ``super+,`` or ``g,`` (vintage command mode): go to next edited location
-* ``super+.`` or ``g.`` (vintage command mode): go to the last edited location
+
+This plugin aims at recovering the full functionality of change list of VIM.
+* Type ``Change List: Show`` in Command Palette to show Change List.
+* Type ``Change List: Clear`` in Command Palette to clear Change List.
+* Type ``super+;`` or ``g;`` (vintage command mode) to go to previous edited location
+* Type ``super+,`` or ``g,`` (vintage command mode) to go to next edited location
+* Type ``super+.`` or ``g.`` (vintage command mode) to go to the last edited location
 
 There are already a few other "LastEdit" plugins . For examples:
 * https://github.com/SamPeng87/sublime-last-edit
@@ -20,12 +21,12 @@ There are already a few other "LastEdit" plugins . For examples:
 * https://github.com/optilude/SublimeTextMisc/blob/master/navigationHistory.py
 * https://gist.github.com/1993147
 
-However, they do not keep editing history after the file is saved and closed (as far as I can tell).<BR>
-This plugin allows you to navigate between edited locations even the computer is restarted.<BR>
+However, they do not keep  history after the file is saved and closed (as far as I can tell).<BR>
 The history is saved to ``Packages/User/Change-List.sublime-settings``.<BR>
 For the moment, the last 50 editing history for each file will be saved.<BR>
 
-Note: It is not the Jump List. It means that the cursor always stays in the same file.
+Note: The cursor always stays in the same file, it does not jump between files.
+I personally think that it is more useful than a jump list.
 
 Keymap
 ----------------------
