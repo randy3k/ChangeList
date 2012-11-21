@@ -13,7 +13,7 @@ class PosStorage():
         self.curr_idx = 0
         self.last_row = view.rowcol(view.sel()[0].end())[1]
         self.file_size = view.size()
-        self.old_pos = []
+        self.old_pos = map(lambda s: s.end(), view.sel())
 
 class CommandManager():
     def GoToChange(self, i):
@@ -112,6 +112,7 @@ class ChangeListener(sublime_plugin.EventListener):
     def update_pos(self, view):
         vid = view.id()
         G = G_REGISTER[vid]
+        if not G.saved_pos: return
         curr_pos = map(lambda s: s.end(), view.sel())
         old_pos = G.old_pos
         file_size = view.size()
@@ -123,12 +124,12 @@ class ChangeListener(sublime_plugin.EventListener):
             #  delete positions in previous selection
             delta = deltas[i]
             if delta<0:
-                G.saved_pos = [pos for pos in G.saved_pos if pos<=curr_pos[i] or pos>=curr_pos[i]-delta]
+                G.saved_pos = [pos for pos in G.saved_pos if pos<curr_pos[i] or pos>=curr_pos[i]-delta]
 
             # update positions
             if delta!=0 :
-                G.saved_pos = [pos+delta if pos > old_pos[i] else pos for pos in G.saved_pos]
-                old_pos = [pos+delta if pos > old_pos[i] else pos for pos in old_pos]
+                G.saved_pos = [pos+delta if pos >= old_pos[i] else pos for pos in G.saved_pos]
+                old_pos = [pos+delta if pos >= old_pos[i] else pos for pos in old_pos]
 
         # update file size
         G.file_size = file_size
@@ -159,11 +160,10 @@ class ChangeListener(sublime_plugin.EventListener):
         vid = view.id()
         if not G_REGISTER.has_key(vid): G_REGISTER[vid] = PosStorage(view)
         G = G_REGISTER[vid]
-
         # reset current index
         G.curr_idx = 0
         # update saved postions
-        if G.saved_pos: self.update_pos(view)
+        self.update_pos(view)
         # insert current position
         self.insert_curr_pos(view)
 
