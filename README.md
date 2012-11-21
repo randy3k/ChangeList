@@ -13,7 +13,7 @@ This plugin aims at recovering the full functionality of change list of VIM.
 * Type ``super+,`` or ``g,`` (vintage command mode) to go to next edited location
 * Type ``super+.`` or ``g.`` (vintage command mode) to go to the last edited location
 
-There are already a few other "LastEdit" plugins . For examples:
+There are already a few other "Last Edit" plugins . For examples:
 * https://github.com/SamPeng87/sublime-last-edit
 * https://github.com/khrizt/GotoLastEdit
 * https://github.com/abrookins/GotoLastEdit
@@ -21,9 +21,9 @@ There are already a few other "LastEdit" plugins . For examples:
 * https://github.com/optilude/SublimeTextMisc/blob/master/navigationHistory.py
 * https://gist.github.com/1993147
 
-However, they do not keep  history after the file is saved and closed (as far as I can tell).<BR>
+However, they do not keep history after the file is saved and closed (as far as I can tell).<BR>
 This plugin saves history to ``Packages/User/Change-List.sublime-settings``.<BR>
-For the moment, the last 50 editing history for each file will be saved.<BR>
+For the moment, the last 50 history for each file will be saved.<BR>
 
 Note: The cursor always stays in the same file, it does not jump between files.
 I personally think that it is more useful than a jump list.
