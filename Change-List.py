@@ -1,9 +1,8 @@
 import sublime, sublime_plugin
 import os
 
-# These variables are placed in globals so that
-# they will not be destoyed when reloading perferences
-# to store edited positions
+# G_REGISTER is placed in global so that
+# it will not be destoyed when reloading perferences
 
 if not 'G_REGISTER' in globals(): G_REGISTER = {}
 
@@ -97,41 +96,44 @@ class ChangeListener(sublime_plugin.EventListener):
 
     def insert_curr_pos(self, view, ):
         vid = view.id()
+        G = G_REGISTER[vid]
         curr_pos = map(lambda s: s.end(), view.sel())
         curr_row = view.rowcol(curr_pos[0])[0]
-        if G_REGISTER[vid].saved_pos:
-            if abs(curr_row - G_REGISTER[vid].last_row)>1:
-                G_REGISTER[vid].saved_pos.insert(0,curr_pos[0])
+        if G.saved_pos:
+            if abs(curr_row - G.last_row)>1:
+                G.saved_pos.insert(0,curr_pos[0])
             else:
-                G_REGISTER[vid].saved_pos[0] = curr_pos[0]
-            if len(G_REGISTER[vid].saved_pos)>50: G_REGISTER[vid].saved_pos.pop()
+                G.saved_pos[0] = curr_pos[0]
+            if len(G.saved_pos)>50: G.saved_pos.pop()
         else:
-            G_REGISTER[vid].saved_pos = [curr_pos[0]]
-        G_REGISTER[vid].last_row = curr_row
+            G.saved_pos = [curr_pos[0]]
+        G.last_row = curr_row
 
     def update_pos(self, view):
         vid = view.id()
+        G = G_REGISTER[vid]
         curr_pos = map(lambda s: s.end(), view.sel())
-        old_pos = G_REGISTER[vid].old_pos
+        old_pos = G.old_pos
         file_size = view.size()
-        deltas = map(lambda x,y: x-y, curr_pos, G_REGISTER[vid].old_pos)
+        deltas = map(lambda x,y: x-y, curr_pos, G.old_pos)
         deltas = [long(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
-        deltas = [long(file_size-G_REGISTER[vid].file_size-sum(deltas))] + deltas
+        deltas = [long(file_size-G.file_size-sum(deltas))] + deltas
 
         for i  in range(len(curr_pos)):
             #  delete positions in previous selection
             delta = deltas[i]
             if delta<0:
-                G_REGISTER[vid].saved_pos = [pos for pos in G_REGISTER[vid].saved_pos if pos<=curr_pos[i] or pos>=curr_pos[i]-delta]
+                G.saved_pos = [pos for pos in G.saved_pos if pos<=curr_pos[i] or pos>=curr_pos[i]-delta]
 
             # update positions
             if delta!=0 :
-                G_REGISTER[vid].saved_pos = [pos+delta if pos > old_pos[i] else pos for pos in G_REGISTER[vid].saved_pos]
+                G.saved_pos = [pos+delta if pos > old_pos[i] else pos for pos in G.saved_pos]
                 old_pos = [pos+delta if pos > old_pos[i] else pos for pos in old_pos]
 
-        G_REGISTER[vid].file_size = file_size
+        # update file size
+        G.file_size = file_size
         # drop invalid positions
-        G_REGISTER[vid].saved_pos = [pos for pos in G_REGISTER[vid].saved_pos if pos>=0 and pos<=file_size]
+        G.saved_pos = [pos for pos in G.saved_pos if pos>=0 and pos<=file_size]
 
     def on_load(self, view):
         vid = view.id()
@@ -156,16 +158,17 @@ class ChangeListener(sublime_plugin.EventListener):
         if view.is_scratch() or view.settings().get('is_widget'): return
         vid = view.id()
         if not G_REGISTER.has_key(vid): G_REGISTER[vid] = PosStorage(view)
+        G = G_REGISTER[vid]
 
         # reset current index
-        G_REGISTER[vid].curr_idx = 0
+        G.curr_idx = 0
         # update saved postions
-        if G_REGISTER[vid].saved_pos: self.update_pos(view)
+        if G.saved_pos: self.update_pos(view)
         # insert current position
         self.insert_curr_pos(view)
 
-        # print map(lambda x: [x[0]+1,x[1]+1], map(lambda p: view.rowcol(p), G_REGISTER[vid].saved_pos))
-        # print G_REGISTER[vid].saved_pos
+        # print map(lambda x: [x[0]+1,x[1]+1], map(lambda p: view.rowcol(p), G.saved_pos))
+        # print G.saved_pos
 
 
     def on_post_save(self, view):
