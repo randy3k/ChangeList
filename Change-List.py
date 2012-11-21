@@ -19,7 +19,7 @@ class CommandManager():
     def GoToChange(self, i):
         view = self.view
         vid = view.id()
-        if (i<0)| (i>len(G_REGISTER[vid].saved_pos)-1): return
+        if i<0 or i>len(G_REGISTER[vid].saved_pos)-1: return
         G_REGISTER[vid].curr_idx = i
         pos = G_REGISTER[vid].saved_pos[i]
         view.sel().clear()
@@ -35,7 +35,7 @@ class CommandManager():
         sublime.status_message("@Change List [%s]" % G_REGISTER[vid].curr_idx )
 
 
-class JumpToChangeCommand(sublime_plugin.TextCommand,CommandManager):
+class JumpToChangeCommand(sublime_plugin.TextCommand, CommandManager):
     def run(self, _, **kwargs):
         view = self.view
         vid = view.id()
@@ -51,7 +51,7 @@ class JumpToChangeCommand(sublime_plugin.TextCommand,CommandManager):
         else:
             self.GoToChange(kwargs['index'])
 
-class ShowChangeList(sublime_plugin.WindowCommand,CommandManager):
+class ShowChangeList(sublime_plugin.WindowCommand, CommandManager):
     def run(self):
         self.view = self.window.active_view()
         view = self.view
@@ -66,7 +66,7 @@ class ShowChangeList(sublime_plugin.WindowCommand,CommandManager):
         if action==-1: return
         self.GoToChange(action)
 
-class ClearChangeList(sublime_plugin.WindowCommand,CommandManager):
+class ClearChangeList(sublime_plugin.WindowCommand, CommandManager):
     def run(self):
         self.view = self.window.active_view()
         try:
@@ -107,6 +107,7 @@ class ChangeListener(sublime_plugin.EventListener):
             if len(G.saved_pos)>50: G.saved_pos.pop()
         else:
             G.saved_pos = [curr_pos[0]]
+        # update last_row
         G.last_row = curr_row
 
     def update_pos(self, view):
@@ -166,10 +167,6 @@ class ChangeListener(sublime_plugin.EventListener):
         self.update_pos(view)
         # insert current position
         self.insert_curr_pos(view)
-
-        # print map(lambda x: [x[0]+1,x[1]+1], map(lambda p: view.rowcol(p), G.saved_pos))
-        # print G.saved_pos
-
 
     def on_post_save(self, view):
         vid = view.id()
