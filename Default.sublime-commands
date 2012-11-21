@@ -1,10 +1,10 @@
 [
     {
-        "caption": "Change List: Clear Change List",
+        "caption": "Change List: Clear",
         "command": "clear_change_list"
     },
     {
-        "caption": "Change List",
+        "caption": "Change List: Show",
         "command": "show_change_list"
     }
 ]

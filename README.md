@@ -6,8 +6,8 @@ Navigating between edited locations!
 Introduction
 ------------
 This plugin aims at recovering the full functionality of Change-List of VI.
-* Run ``Change List`` in Command Palette to show Change List panel.
-* Run ``Clear Change List`` in Command Palette to clear Change List.
+* Run ``Change List: Show`` in Command Palette to show Change List panel.
+* Run ``Change List: Clear`` in Command Palette to clear Change List.
 * ``super+;`` or ``g;`` (vintage command mode): go to previous edited location
 * ``super+,`` or ``g,`` (vintage command mode): go to next edited location
 * ``super+.`` or ``g.`` (vintage command mode): go to the last edited location
@@ -18,7 +18,7 @@ There are already a few other "LastEdit" plugins . For examples:
 * https://github.com/abrookins/GotoLastEdit
 * https://github.com/Stuk/sublime-edit-history
 * https://github.com/optilude/SublimeTextMisc/blob/master/navigationHistory.py
-* https://gist.github.com/1993147 
+* https://gist.github.com/1993147
 
 However, they do not keep editing history after the file is saved and closed (as far as I can tell).<BR>
 This plugin allows you to navigate between edited locations even the computer is restarted.<BR>
@@ -30,7 +30,7 @@ Note: It is not the Jump List. It means that the cursor always stays in the same
 Keymap
 ----------------------
 It overwrites the default keymap ``super+,`` for consistency.<br>
-I wish to map <code>\`.</code> or ``'.`` to ``go to the last edited location``. 
+I wish to map <code>\`.</code> or ``'.`` to ``go to the last edited location``.
 However vintage has used them for bookmarks and I couldn't overwrite them without touching vintage code.
 
 Known issues
