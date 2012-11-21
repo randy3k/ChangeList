@@ -22,7 +22,7 @@ There are already a few other "LastEdit" plugins . For examples:
 * https://gist.github.com/1993147
 
 However, they do not keep  history after the file is saved and closed (as far as I can tell).<BR>
-The history is saved to ``Packages/User/Change-List.sublime-settings``.<BR>
+This plugin saves history to ``Packages/User/Change-List.sublime-settings``.<BR>
 For the moment, the last 50 editing history for each file will be saved.<BR>
 
 Note: The cursor always stays in the same file, it does not jump between files.
