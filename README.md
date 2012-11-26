@@ -3,6 +3,10 @@ Change List (Last Edit) for Sublime Text 2
 It remembers the locations where changes occurred.
 <img src="https://github.com/randy3k/Change-List/raw/master/changelist.png">
 
+Installation
+------------
+Via [Package Control](http://wbond.net/sublime_packages/package_control)
+
 Introduction
 ------------
 
