@@ -1,6 +1,6 @@
 Change List (Last Edit) for Sublime Text 2
 ====================
-It remembers the locations where changes occurred.
+It remembers where changes were made.
 <img src="https://github.com/randy3k/Change-List/raw/master/changelist.png">
 
 Installation
@@ -29,17 +29,14 @@ However, they do not keep history after the file is saved and closed (as far as 
 This plugin saves history to ``Packages/User/Change-List.sublime-settings``.<BR>
 For the moment, the last 50 history for each file will be saved.<BR>
 
-Note: The cursor always stays in the same file, it does not jump between files.
-I personally think that it is more useful than a jump list.
+Note: The cursor always stays in the same file.
 
 Keymap
 ----------------------
 It overwrites the default keymap ``super+,`` for consistency.<br>
-I wish to map <code>\`.</code> or ``'.`` to ``go to the last edited location``.
-However vintage has used them for bookmarks and I couldn't overwrite them without touching vintage code.
 
 Known issues
 -----------------------
-* Undo will change the history (ironic, huh!?). I have no idea on how to correct this at this moment.
-* Multi cursor support is now limited, only the location of first cursor will be saved.
-  However, multi cursor editing preserves the history.
+* Undo will update the change list. I have no idea on how to fix it at this moment.
+* Multi cursor support is now limited, only the location of the first cursor will be saved.
+  However, most multi cursor editing preserves history.
