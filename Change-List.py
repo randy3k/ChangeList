@@ -16,8 +16,7 @@ class PosStorage():
         self.old_pos = map(lambda s: s.end(), view.sel())
 
 class CommandManager():
-    def GoToChange(self, i):
-        view = self.view
+    def GoToChange(self, view, i):
         vid = view.id()
         if i<0 or i>len(G_REGISTER[vid].saved_pos)-1: return
         G_REGISTER[vid].curr_idx = i
@@ -31,6 +30,9 @@ class CommandManager():
         if view.settings().get('command_mode'):
             view.run_command("enter_insert_mode")
             view.run_command("exit_insert_mode")
+        else:
+            view.run_command("move", {"by": "characters", "forward" : False})
+            view.run_command("move", {"by": "characters", "forward" : True})
 
         sublime.status_message("@Change List [%s]" % G_REGISTER[vid].curr_idx )
 
@@ -47,14 +49,13 @@ class JumpToChangeCommand(sublime_plugin.TextCommand, CommandManager):
             move = kwargs['move']
             if G_REGISTER[vid].curr_idx==0 and move==1:
                 if abs(curr_pos - G_REGISTER[vid].saved_pos[0])>1: move = 0
-            self.GoToChange(G_REGISTER[vid].curr_idx + move)
+            self.GoToChange(view, G_REGISTER[vid].curr_idx + move)
         else:
-            self.GoToChange(kwargs['index'])
+            self.GoToChange(view, kwargs['index'])
 
 class ShowChangeList(sublime_plugin.WindowCommand, CommandManager):
     def run(self):
-        self.view = self.window.active_view()
-        view = self.view
+        view = self.window.active_view()
         vid = view.id()
         if not G_REGISTER.has_key(vid): return
         if not G_REGISTER[vid].saved_pos: return
@@ -63,8 +64,9 @@ class ShowChangeList(sublime_plugin.WindowCommand, CommandManager):
         self.window.show_quick_panel(change_list, self.on_done)
 
     def on_done(self, action):
+        view = self.window.active_view()
         if action==-1: return
-        self.GoToChange(action)
+        self.GoToChange(view, action)
 
 class ClearChangeList(sublime_plugin.WindowCommand, CommandManager):
     def run(self):
@@ -167,6 +169,7 @@ class ChangeListener(sublime_plugin.EventListener):
         self.update_pos(view)
         # insert current position
         self.insert_curr_pos(view)
+        # print G.saved_pos
 
     def on_post_save(self, view):
         vid = view.id()
