@@ -86,12 +86,12 @@ class ClearChangeList(sublime_plugin.WindowCommand, CommandManager):
             settings = sublime.load_settings('%s.sublime-settings' % __name__)
             if vname and settings.has(vname): settings.erase(vname)
             sublime.save_settings('%s.sublime-settings' % __name__)
-            sublime.status_message("Clear Change List (this file) successfually.")
+            sublime.status_message("Clear Change List (this file) successfully.")
         elif action==1:
             G_REGISTER = {}
             path = os.path.join(sublime.packages_path(), "User" , '%s.sublime-settings' % __name__)
             if os.path.exists(path): os.remove(path)
-            sublime.status_message("Clear Change List (all file) successfually.")
+            sublime.status_message("Clear Change List (all file) successfully.")
 
 
 class ChangeListener(sublime_plugin.EventListener):
