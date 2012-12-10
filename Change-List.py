@@ -119,20 +119,27 @@ class ChangeListener(sublime_plugin.EventListener):
         curr_pos = map(lambda s: s.end(), view.sel())
         old_pos = G.old_pos
         file_size = view.size()
-        deltas = map(lambda x,y: x-y, curr_pos, G.old_pos)
-        deltas = [long(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
-        deltas = [long(file_size-G.file_size-sum(deltas))] + deltas
+        # probelms can be created if number of selections changes
+        if len(curr_pos)==len(G.old_pos):
+            deltas = map(lambda x,y: x-y, curr_pos, G.old_pos)
+            deltas = [long(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
+            deltas = [long(file_size-G.file_size-sum(deltas))] + deltas
 
-        for i  in range(len(curr_pos)):
-            #  delete positions in previous selection
-            delta = deltas[i]
-            if delta<0:
-                G.saved_pos = [pos for pos in G.saved_pos if pos<curr_pos[i] or pos>=curr_pos[i]-delta]
+            for i  in reversed(range(len(curr_pos))):
+                #  delete positions in previous selection
+                delta = deltas[i]
+                if delta<0:
+                    G.saved_pos = [pos for pos in G.saved_pos if pos<curr_pos[i] or pos>=curr_pos[i]-delta]
 
-            # update positions
+                # update positions
+                if delta!=0 :
+                    G.saved_pos = [pos+delta if pos >= old_pos[i] else pos for pos in G.saved_pos]
+        else:
+            # if not, do the best to update position
+            print "Warnings from Change List: number of selections change"
+            delta = long(file_size-G.file_size)
             if delta!=0 :
-                G.saved_pos = [pos+delta if pos >= old_pos[i] else pos for pos in G.saved_pos]
-                old_pos = [pos+delta if pos >= old_pos[i] else pos for pos in old_pos]
+                G.saved_pos = [pos+delta if pos >= curr_pos[0] else pos for pos in G.saved_pos]
 
         # update file size
         G.file_size = file_size
@@ -170,6 +177,7 @@ class ChangeListener(sublime_plugin.EventListener):
         # insert current position
         self.insert_curr_pos(view)
         # print G.saved_pos
+
 
     def on_post_save(self, view):
         vid = view.id()
