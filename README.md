@@ -1,4 +1,4 @@
-Change List / History / Last Edit for Sublime Text 2
+Change List / History / Last Edit for Sublime Text 2/3
 ====================
 It remembers where changes were made.
 <img src="https://github.com/randy3k/ChangeList/raw/master/changelist.png">

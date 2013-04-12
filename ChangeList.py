@@ -1,5 +1,8 @@
 import sublime, sublime_plugin
 import os
+import sys
+if sys.version >= '3':
+    long  = int
 
 # G_REGISTER is placed in global so that
 # it will not be destoyed when reloading perferences
@@ -13,7 +16,7 @@ class PosStorage():
         self.curr_idx = 0
         self.last_row = view.rowcol(view.sel()[0].end())[1]
         self.file_size = view.size()
-        self.old_pos = map(lambda s: s.end(), view.sel())
+        self.old_pos = [s.end() for s in view.sel()]
 
 class CommandManager():
     def GoToChange(self, view, i):
@@ -38,14 +41,14 @@ class CommandManager():
 
 
 class JumpToChangeCommand(sublime_plugin.TextCommand, CommandManager):
-    def run(self, _, **kwargs):
+    def run(self, edit, **kwargs):
         view = self.view
         vid = view.id()
-        if not G_REGISTER.has_key(vid): return
+        if not vid in G_REGISTER: return
         if not G_REGISTER[vid].saved_pos: return
         # if the cursor has moved away from the recent edited location, set move = 0
         curr_pos = view.sel()[0].end()
-        if not kwargs.has_key('index'):
+        if not 'index' in kwargs:
             move = kwargs['move']
             if G_REGISTER[vid].curr_idx==0 and move==1:
                 if abs(curr_pos - G_REGISTER[vid].saved_pos[0])>1: move = 0
@@ -57,7 +60,7 @@ class ShowChangeList(sublime_plugin.WindowCommand, CommandManager):
     def run(self):
         view = self.window.active_view()
         vid = view.id()
-        if not G_REGISTER.has_key(vid): return
+        if not vid in G_REGISTER: return
         if not G_REGISTER[vid].saved_pos: return
         change_list = [ "[%2d] Line %3d: %s" % (i, view.rowcol(pos)[0]+1,
             view.substr(view.line(pos))) for i,pos in enumerate(G_REGISTER[vid].saved_pos)]
@@ -81,7 +84,7 @@ class ClearChangeList(sublime_plugin.WindowCommand, CommandManager):
         global G_REGISTER
         if action==0:
             vid = self.view.id()
-            if G_REGISTER.has_key(vid): G_REGISTER.pop(vid)
+            if vid in G_REGISTER: G_REGISTER.pop(vid)
             vname = self.view.file_name()
             settings = sublime.load_settings('%s.sublime-settings' % __name__)
             if vname and settings.has(vname): settings.erase(vname)
@@ -96,10 +99,11 @@ class ClearChangeList(sublime_plugin.WindowCommand, CommandManager):
 
 class ChangeListener(sublime_plugin.EventListener):
 
-    def insert_curr_pos(self, view, ):
+    def insert_curr_pos(self, view):
         vid = view.id()
         G = G_REGISTER[vid]
-        curr_pos = map(lambda s: s.end(), view.sel())
+        curr_pos = [s.end() for s in view.sel()]
+        # print(curr_pos)
         curr_row = view.rowcol(curr_pos[0])[0]
         if G.saved_pos:
             if abs(curr_row - G.last_row)>1:
@@ -116,12 +120,12 @@ class ChangeListener(sublime_plugin.EventListener):
         vid = view.id()
         G = G_REGISTER[vid]
         if not G.saved_pos: return
-        curr_pos = map(lambda s: s.end(), view.sel())
+        curr_pos = [s.end() for s in view.sel()]
         old_pos = G.old_pos
         file_size = view.size()
         # probelms can be created if number of selections changes
         if len(curr_pos)==len(G.old_pos):
-            deltas = map(lambda x,y: x-y, curr_pos, G.old_pos)
+            deltas = list(map(lambda x,y: x-y, curr_pos, G.old_pos))
             deltas = [long(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
             deltas = [long(file_size-G.file_size-sum(deltas))] + deltas
 
@@ -136,7 +140,7 @@ class ChangeListener(sublime_plugin.EventListener):
                     G.saved_pos = [pos+delta if pos >= old_pos[i] else pos for pos in G.saved_pos]
         else:
             # if not, do the best to update position
-            print "Warnings from Change List: number of selections change"
+            print("Warnings from Change List: number of selections change")
             delta = long(file_size-G.file_size)
             if delta!=0 :
                 G.saved_pos = [pos+delta if pos >= curr_pos[0] else pos for pos in G.saved_pos]
@@ -157,18 +161,18 @@ class ChangeListener(sublime_plugin.EventListener):
                 saved_pos = []
         else:
             saved_pos = []
-        if not G_REGISTER.has_key(vid): G_REGISTER[vid] = PosStorage(view, saved_pos)
+        if not vid in G_REGISTER: G_REGISTER[vid] = PosStorage(view, saved_pos)
 
     def on_selection_modified(self, view):
         vid = view.id()
-        if not G_REGISTER.has_key(vid): G_REGISTER[vid] = PosStorage(view)
+        if not vid in G_REGISTER: G_REGISTER[vid] = PosStorage(view)
         # get the current multi cursor locations
-        G_REGISTER[vid].old_pos = map(lambda s: s.end(), view.sel())
+        G_REGISTER[vid].old_pos = [s.end() for s in view.sel()]
 
     def on_modified(self, view):
         if view.is_scratch() or view.settings().get('is_widget'): return
         vid = view.id()
-        if not G_REGISTER.has_key(vid): G_REGISTER[vid] = PosStorage(view)
+        if not vid in G_REGISTER: G_REGISTER[vid] = PosStorage(view)
         G = G_REGISTER[vid]
         # reset current index
         G.curr_idx = 0
@@ -182,11 +186,11 @@ class ChangeListener(sublime_plugin.EventListener):
     def on_post_save(self, view):
         vid = view.id()
         vname = view.file_name()
-        if G_REGISTER.has_key(vid):
+        if vid in G_REGISTER:
             settings = sublime.load_settings('%s.sublime-settings' % __name__)
-            settings.set(vname, ",".join(map(str, G_REGISTER[vid].saved_pos)))
+            settings.set(vname, ",".join(list(map(str, G_REGISTER[vid].saved_pos))))
             sublime.save_settings('%s.sublime-settings' % __name__)
 
     def on_close(self, view):
         vid = view.id()
-        if G_REGISTER.has_key(vid): G_REGISTER.pop(vid)
+        if vid in G_REGISTER: G_REGISTER.pop(vid)
