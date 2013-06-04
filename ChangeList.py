@@ -1,196 +1,236 @@
 import sublime, sublime_plugin
 import os
 import sys
-if sys.version >= '3':
-    long  = int
+import json
+import codecs
 
-# G_REGISTER is placed in global so that
-# it will not be destoyed when reloading perferences
+# clist_dict = {}
+if not 'clist_dict' in globals(): clist_dict = {}
 
-if not 'G_REGISTER' in globals(): G_REGISTER = {}
+# Change List object
+class CList():
+    LIST_LIMIT = 50
+    key_counter = 0
+    pointer = -1
+    key_list = []
 
-class PosStorage():
-    def __init__(self, view, saved_pos=[]):
-        self.vid = view.id()
-        self.saved_pos = saved_pos
-        self.curr_idx = 0
-        self.last_row = view.rowcol(view.sel()[0].end())[1]
-        self.file_size = view.size()
-        self.old_pos = [s.end() for s in view.sel()]
+    def __init__(self, view):
+        self.view = view
 
-class CommandManager():
-    def GoToChange(self, view, i):
-        vid = view.id()
-        if i<0 or i>len(G_REGISTER[vid].saved_pos)-1: return
-        G_REGISTER[vid].curr_idx = i
-        pos = G_REGISTER[vid].saved_pos[i]
-        view.sel().clear()
-        view.show(pos)
-        view.sel().add(pos)
-
-        # to reactivate sublime_plugin.WindowCommand.on_selection_modified()
-        # useful for plugin - SublimeBlockCursor
-        if view.settings().get('command_mode'):
-            view.run_command("enter_insert_mode")
-            view.run_command("exit_insert_mode")
-        else:
-            view.run_command("move", {"by": "characters", "forward" : False})
-            view.run_command("move", {"by": "characters", "forward" : True})
-
-        sublime.status_message("@Change List [%s]" % G_REGISTER[vid].curr_idx )
-
-
-class JumpToChangeCommand(sublime_plugin.TextCommand, CommandManager):
-    def run(self, edit, **kwargs):
+    def push_key(self):
         view = self.view
-        vid = view.id()
-        if not vid in G_REGISTER: return
-        if not G_REGISTER[vid].saved_pos: return
-        # if the cursor has moved away from the recent edited location, set move = 0
-        curr_pos = view.sel()[0].end()
-        if not 'index' in kwargs:
-            move = kwargs['move']
-            if G_REGISTER[vid].curr_idx==0 and move==1:
-                if abs(curr_pos - G_REGISTER[vid].saved_pos[0])>1: move = 0
-            self.GoToChange(view, G_REGISTER[vid].curr_idx + move)
-        else:
-            self.GoToChange(view, kwargs['index'])
+        region_list = list(view.sel())
+        if not region_list: return
 
-class ShowChangeList(sublime_plugin.WindowCommand, CommandManager):
-    def run(self):
-        view = self.window.active_view()
-        vid = view.id()
-        if not vid in G_REGISTER: return
-        if not G_REGISTER[vid].saved_pos: return
-        change_list = [ "[%2d] Line %3d: %s" % (i, view.rowcol(pos)[0]+1,
-            view.substr(view.line(pos))) for i,pos in enumerate(G_REGISTER[vid].saved_pos)]
-        self.window.show_quick_panel(change_list, self.on_done)
+        if self.key_list:
+            last_sel = view.get_regions(self.key_list[-1])
+            if last_sel == region_list: return
+            if len(last_sel) == len(region_list):
+                if all([view.rowcol(i.begin())[0]==view.rowcol(j.begin())[0] for i,j in zip(last_sel, region_list)]):
+                    self.key_counter -= 1
+                    self.key_list.pop(-1)
 
-    def on_done(self, action):
-        view = self.window.active_view()
-        if action==-1: return
-        self.GoToChange(view, action)
+        self.pointer = -1
+        key = self.generate_key()
+        view.erase_regions(key)
+        view.add_regions(key, region_list ,"")
+        self.key_list.append(key)
 
-class ClearChangeList(sublime_plugin.WindowCommand, CommandManager):
-    def run(self):
-        self.view = self.window.active_view()
-        try:
-            fname = os.path.basename(self.view.file_name())
-        except:
-            fname = "untitled"
-        self.window.show_quick_panel([fname, "All files"], self.on_done)
+    def generate_key(self):
+        self.key_counter += 1
+        self.key_counter %= self.LIST_LIMIT * 2
 
-    def on_done(self, action):
-        global G_REGISTER
-        if action==0:
-            vid = self.view.id()
-            if vid in G_REGISTER: G_REGISTER.pop(vid)
-            vname = self.view.file_name()
-            settings = sublime.load_settings('%s.sublime-settings' % __name__)
-            if vname and settings.has(vname): settings.erase(vname)
-            sublime.save_settings('%s.sublime-settings' % __name__)
-            sublime.status_message("Clear Change List (this file) successfully.")
-        elif action==1:
-            G_REGISTER = {}
-            path = os.path.join(sublime.packages_path(), "User" , '%s.sublime-settings' % __name__)
-            if os.path.exists(path): os.remove(path)
-            sublime.status_message("Clear Change List (all file) successfully.")
+        # if number of keys doubles the LIST_LIMIT, reload the keys
+        if self.key_counter == 0:
+            self.reload_keys()
+            self.key_counter += 1
+        return str(self.key_counter)
+
+    def reload_keys(self, sel_list=None):
+        view = self.view
+        if not sel_list: sel_list = [self.view.get_regions(key) for key in self.key_list]
+        for i,sel in enumerate(sel_list):
+            view.erase_regions(str(i+1))
+            view.add_regions(str(i+1), sel, "")
+        self.key_list = [str(s) for s in range(len(sel_list)+1)[1:]]
+        self.key_counter = len(sel_list)
 
 
-class ChangeListener(sublime_plugin.EventListener):
+    def trim_keys(self):
+        view = self.view
+        if len(self.key_list) > self.LIST_LIMIT:
+            for i in range(0, len(self.key_list) - self.LIST_LIMIT):
+                key = self.key_list[i]
+                view.erase_regions(key)
+            del self.key_list[: len(self.key_list) - self.LIST_LIMIT]
 
-    def insert_curr_pos(self, view):
-        vid = view.id()
-        G = G_REGISTER[vid]
-        curr_pos = [s.end() for s in view.sel()]
-        # print(curr_pos)
-        curr_row = view.rowcol(curr_pos[0])[0]
-        if G.saved_pos:
-            if abs(curr_row - G.last_row)>1:
-                G.saved_pos.insert(0,curr_pos[0])
+    def remove_empty_keys(self):
+        view = self.view
+        new_key_list = []
+        for key in self.key_list:
+            # print(view.get_regions(key))
+            if view.get_regions(key):
+                new_key_list.append(key)
             else:
-                G.saved_pos[0] = curr_pos[0]
-            if len(G.saved_pos)>50: G.saved_pos.pop()
-        else:
-            G.saved_pos = [curr_pos[0]]
-        # update last_row
-        G.last_row = curr_row
+                view.erase_regions(key)
+        self.key_list = new_key_list
 
-    def update_pos(self, view):
-        vid = view.id()
-        G = G_REGISTER[vid]
-        if not G.saved_pos: return
-        curr_pos = [s.end() for s in view.sel()]
-        old_pos = G.old_pos
-        file_size = view.size()
-        # probelms can be created if number of selections changes
-        if len(curr_pos)==len(G.old_pos):
-            deltas = list(map(lambda x,y: x-y, curr_pos, G.old_pos))
-            deltas = [long(x - deltas[i-1]) for i,x in enumerate(deltas) if i>0]
-            deltas = [long(file_size-G.file_size-sum(deltas))] + deltas
+    def goto(self, index):
+        view = self.view
+        if index>=0 or index< -len(self.key_list): return
+        self.pointer = index
+        sel = view.get_regions(self.key_list[index])
+        view.sel().clear()
+        view.show(sel[0], True)
+        for s in sel:
+            view.sel().add(s)
 
-            for i  in reversed(range(len(curr_pos))):
-                #  delete positions in previous selection
-                delta = deltas[i]
-                if delta<0:
-                    G.saved_pos = [pos for pos in G.saved_pos if pos<curr_pos[i] or pos>=curr_pos[i]-delta]
+def load_jsonfile():
+    jsonFilepath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
+    if os.path.exists(jsonFilepath):
+        jsonFile = codecs.open(jsonFilepath, "r+", encoding="utf-8")
+        try:
+            data = json.load(jsonFile)
+        except:
+            data = {}
+        jsonFile.close()
+    else:
+        jsonFile = codecs.open(jsonFilepath, "w+", encoding="utf-8")
+        data = {}
+        jsonFile.close()
+    return data
 
-                # update positions
-                if delta!=0 :
-                    G.saved_pos = [pos+delta if pos >= old_pos[i] else pos for pos in G.saved_pos]
-        else:
-            # if not, do the best to update position
-            print("Warnings from Change List: number of selections change")
-            delta = long(file_size-G.file_size)
-            if delta!=0 :
-                G.saved_pos = [pos+delta if pos >= curr_pos[0] else pos for pos in G.saved_pos]
+def save_jsonfile(data):
+    jsonFilepath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
+    jsonFile = codecs.open(jsonFilepath, "w+", encoding="utf-8")
+    jsonFile.write(json.dumps(data, ensure_ascii=False))
+    jsonFile.close()
 
-        # update file size
-        G.file_size = file_size
-        # drop invalid positions
-        G.saved_pos = [pos for pos in G.saved_pos if pos>=0 and pos<=file_size]
+def remove_jsonfile():
+    jsonFilepath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
+    if os.path.exists(jsonFilepath): os.remove(jsonFilepath)
 
-    def on_load(self, view):
-        vid = view.id()
-        vname = view.file_name()
-        settings = sublime.load_settings('%s.sublime-settings' % __name__)
-        if vname and settings.has(vname):
-            try:
-                saved_pos = [long(item) for item in settings.get(vname).split(",")]
-            except:
-                saved_pos = []
-        else:
-            saved_pos = []
-        if not vid in G_REGISTER: G_REGISTER[vid] = PosStorage(view, saved_pos)
+def get_clist(view):
+    global clist_dict
+    vid = view.id()
+    vname = view.file_name()
+    if vid in clist_dict:
+        this_clist = clist_dict[vid]
+    else:
+        this_clist = CList(view)
+        clist_dict[vid] = this_clist
+        data = load_jsonfile()
+        f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
+        if vname in data:
+            sel_list = [[f(s.split(",")) for s in sel.split("|")] for sel in data[vname]['history']]
+            this_clist.reload_keys(sel_list)
+    return this_clist
 
-    def on_selection_modified(self, view):
-        vid = view.id()
-        if not vid in G_REGISTER: G_REGISTER[vid] = PosStorage(view)
-        # get the current multi cursor locations
-        G_REGISTER[vid].old_pos = [s.end() for s in view.sel()]
-
+class CListener(sublime_plugin.EventListener):
     def on_modified(self, view):
         if view.is_scratch() or view.settings().get('is_widget'): return
-        vid = view.id()
-        if not vid in G_REGISTER: G_REGISTER[vid] = PosStorage(view)
-        G = G_REGISTER[vid]
-        # reset current index
-        G.curr_idx = 0
-        # update saved postions
-        self.update_pos(view)
-        # insert current position
-        self.insert_curr_pos(view)
-        # print G.saved_pos
-
+        this_clist = get_clist(view)
+        this_clist.remove_empty_keys()
+        this_clist.push_key()
+        this_clist.trim_keys()
+        # print(this_clist, this_clist.key_list)
+        # for key in this_clist.key_list:
+        #     print(view.get_regions(key))
 
     def on_post_save(self, view):
-        vid = view.id()
+        this_clist = get_clist(view)
         vname = view.file_name()
-        if vid in G_REGISTER:
-            settings = sublime.load_settings('%s.sublime-settings' % __name__)
-            settings.set(vname, ",".join(list(map(str, G_REGISTER[vid].saved_pos))))
-            sublime.save_settings('%s.sublime-settings' % __name__)
+        data = load_jsonfile()
+        f = lambda s: str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
+        data[vname] =  {"history": ["|".join([f(s) for s in view.get_regions(key)]) for key in this_clist.key_list]}
+        save_jsonfile(data)
 
     def on_close(self, view):
         vid = view.id()
-        if vid in G_REGISTER: G_REGISTER.pop(vid)
+        if vid in clist_dict: clist_dict.pop(vid)
+
+
+class JumpToChange(sublime_plugin.TextCommand):
+    def run(self, _, **kwargs):
+        view = self.view
+        # reset vintageous action
+        try:
+            vintage = view.settings().get('vintage')
+            vintage['action'] = None
+            view.settings().set('vintage', vintage)
+        except:
+            pass
+
+        if view.is_scratch() or view.settings().get('is_widget'): return
+        this_clist = get_clist(view)
+        if not this_clist.key_list: return
+        if 'move' in kwargs:
+            move = kwargs['move']
+            if move == -1 and this_clist.pointer == -1 and view.get_regions(this_clist.key_list[-1]) != list(view.sel()):
+                move = 0
+            index = this_clist.pointer+move
+        elif 'index' in kwargs:
+            index = kwargs['index']
+        else:
+            return
+        if index>=0 or index< -len(this_clist.key_list): return
+        # print(len(this_clist.key_list))
+        this_clist.goto(index)
+        # to reactivate cursor
+        view.run_command("move", {"by": "characters", "forward" : False})
+        view.run_command("move", {"by": "characters", "forward" : True})
+        sublime.status_message("@[%s]" % str(-index-1))
+
+class ShowChangeList(sublime_plugin.WindowCommand):
+    def run(self):
+        view = self.window.active_view()
+        if view.is_scratch() or view.settings().get('is_widget'): return
+        this_clist = get_clist(view)
+        if not this_clist.key_list: return
+        def f(i,key):
+            begin = view.get_regions(key)[0].begin()
+            return "[%2d] %3d: %s" % (i, view.rowcol(begin)[0]+1, view.substr(view.line(begin)))
+        self.window.show_quick_panel([ f(i,key)
+                    for i,key in enumerate(reversed(this_clist.key_list))], self.on_done)
+
+    def on_done(self, action):
+        view = self.window.active_view()
+        this_clist = get_clist(view)
+        if action==-1: return
+        # print(-action-1)
+        view.run_command("jump_to_change", {"index" : -action-1})
+
+class ManageChangeList(sublime_plugin.WindowCommand):
+    def run(self):
+        view = self.window.active_view()
+        if view.is_scratch() or view.settings().get('is_widget'): return
+        try:
+            fname = os.path.basename(view.file_name())
+        except:
+            fname = "untitled"
+        self.window.show_quick_panel(["Clear "+fname, "Clear All files", "Rebuild Database"], self.on_done)
+
+    def on_done(self, action):
+        view = self.window.active_view()
+        global clist_dict
+        if action==0:
+            vid = view.id()
+            vname = view.file_name()
+            if vid in clist_dict: clist_dict.pop(vid)
+            if vname:
+                data = load_jsonfile()
+                if vname in data:
+                    data.pop(vname)
+                    save_jsonfile(data)
+            sublime.status_message("Change List (this file) is cleared successfully.")
+        elif action==1:
+            clist_dict = {}
+            remove_jsonfile()
+            sublime.status_message("Change List (all file) is cleared successfully.")
+        elif action==2:
+            data = load_jsonfile()
+            itemremove = [vname for vname in data if not os.path.exists(vname)]
+            for item in itemremove:
+                data.pop(item)
+            save_jsonfile(data)
+            sublime.status_message("Change List Database is rebuilt successfully.")

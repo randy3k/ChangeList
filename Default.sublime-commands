@@ -1,7 +1,7 @@
 [
     {
-        "caption": "Change List: Clear",
-        "command": "clear_change_list"
+        "caption": "Change List: Manage",
+        "command": "manage_change_list"
     },
     {
         "caption": "Change List: Show",

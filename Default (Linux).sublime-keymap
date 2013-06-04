@@ -1,5 +1,0 @@
-[
-  { "keys": ["ctrl+;"], "command": "jump_to_change", "args": {"move": 1}},
-  { "keys": ["ctrl+,"], "command": "jump_to_change", "args": {"move": -1}},
-  { "keys": ["ctrl+."], "command": "jump_to_change", "args": {"index": 0}}  
-]
