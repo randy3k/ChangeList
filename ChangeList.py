@@ -92,6 +92,7 @@ def load_jsonfile():
         try:
             data = json.load(jsonFile)
         except:
+            print("Not json file!")
             data = {}
         jsonFile.close()
     else:
@@ -121,9 +122,12 @@ def get_clist(view):
         clist_dict[vid] = this_clist
         data = load_jsonfile()
         f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
-        if vname in data:
-            sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
-            this_clist.reload_keys(sel_list)
+        try:
+            if vname in data:
+                sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
+                this_clist.reload_keys(sel_list)
+        except:
+            print("Reload keys failed!")
     return this_clist
 
 class CListener(sublime_plugin.EventListener):
