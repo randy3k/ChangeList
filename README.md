@@ -24,9 +24,21 @@ For [Vintage](https://github.com/sublimehq/Vintage), ignore this if you don't kn
 For [Vintageous](https://github.com/guillermooo/Vintageous?source=c), ignore this if you don't know what it is.
 
         [
-            { "keys": ["g",";"], "command": "jump_to_change", "args": {"move": 1}, "context": [{"key": "setting.command_mode"}]},
-            { "keys": ["g",","], "command": "jump_to_change", "args": {"move": -1}, "context": [{"key": "setting.command_mode"}]},
-            { "keys": ["g","."], "command": "jump_to_change", "args": {"index": -1}, "context": [{"key": "setting.command_mode"}]}
+            { "keys": [";"], "command": "jump_to_change", "args": {"move": 1}, "context":
+                [
+                    { "key": "setting.command_mode" }, { "key": "vi_in_key_namespace", "operand": "g" }
+                ]
+            },
+            { "keys": [","], "command": "jump_to_change", "args": {"move": -1}, "context":
+                [
+                    { "key": "setting.command_mode" }, { "key": "vi_in_key_namespace", "operand": "g" }
+                ]
+            },
+            { "keys": ["."], "command": "jump_to_change", "args": {"index": -1}, "context":
+                [
+                    { "key": "setting.command_mode" }, { "key": "vi_in_key_namespace", "operand": "g" }
+                ]
+            }
         ]
 
 
