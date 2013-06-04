@@ -46,7 +46,7 @@ Usage
 ------------
 
 * Launch ``Change List: Show`` in Command Palette to show Change List.
-* Launch ``Change List: Manage`` in Command Palette to manage Change List.
+* Launch ``Change List: Maintenance`` in Command Palette to maintain Change List.
 * ``ctrl+;``  go to previous edited location
 * ``ctrl+,``  go to next edited location
 * ``ctrl+.``  go to the last edited location

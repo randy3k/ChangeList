@@ -200,7 +200,7 @@ class ShowChangeList(sublime_plugin.WindowCommand):
         # print(-action-1)
         view.run_command("jump_to_change", {"index" : -action-1})
 
-class ManageChangeList(sublime_plugin.WindowCommand):
+class MaintainChangeList(sublime_plugin.WindowCommand):
     def run(self):
         view = self.window.active_view()
         if view.is_scratch() or view.settings().get('is_widget'): return
@@ -208,7 +208,7 @@ class ManageChangeList(sublime_plugin.WindowCommand):
             fname = os.path.basename(view.file_name())
         except:
             fname = "untitled"
-        self.window.show_quick_panel(["Clear "+fname, "Clear All files", "Rebuild Database"], self.on_done)
+        self.window.show_quick_panel(["Clear History - "+fname, "Clear All History", "Rebuild History"], self.on_done)
 
     def on_done(self, action):
         view = self.window.active_view()
@@ -233,4 +233,4 @@ class ManageChangeList(sublime_plugin.WindowCommand):
             for item in itemremove:
                 data.pop(item)
             save_jsonfile(data)
-            sublime.status_message("Change List Database is rebuilt successfully.")
+            sublime.status_message("Change List History is rebuilt successfully.")
