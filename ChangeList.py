@@ -122,7 +122,7 @@ def get_clist(view):
         data = load_jsonfile()
         f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
         if vname in data:
-            sel_list = [[f(s.split(",")) for s in sel.split("|")] for sel in data[vname]['history']]
+            sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
             this_clist.reload_keys(sel_list)
     return this_clist
 
@@ -142,7 +142,7 @@ class CListener(sublime_plugin.EventListener):
         vname = view.file_name()
         data = load_jsonfile()
         f = lambda s: str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
-        data[vname] =  {"history": ["|".join([f(s) for s in view.get_regions(key)]) for key in this_clist.key_list]}
+        data[vname] =  {"history": "|".join([":".join([f(s) for s in view.get_regions(key)]) for key in this_clist.key_list])}
         save_jsonfile(data)
 
     def on_close(self, view):
@@ -208,12 +208,18 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             fname = os.path.basename(view.file_name())
         except:
             fname = "untitled"
-        self.window.show_quick_panel(["Clear History - "+fname, "Clear All History", "Rebuild History"], self.on_done)
+        self.window.show_quick_panel(["Rebuild History", "Clear History - "+fname, "Clear All History"], self.on_done)
 
     def on_done(self, action):
         view = self.window.active_view()
         global clist_dict
         if action==0:
+            data = load_jsonfile()
+            for item in [item for item in data if not os.path.exists(item)]:
+                data.pop(item)
+            save_jsonfile(data)
+            sublime.status_message("Change List History is rebuilt successfully.")
+        elif action==1:
             vid = view.id()
             vname = view.file_name()
             if vid in clist_dict: clist_dict.pop(vid)
@@ -223,14 +229,7 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
                     data.pop(vname)
                     save_jsonfile(data)
             sublime.status_message("Change List (this file) is cleared successfully.")
-        elif action==1:
+        elif action==2:
             clist_dict = {}
             remove_jsonfile()
             sublime.status_message("Change List (all file) is cleared successfully.")
-        elif action==2:
-            data = load_jsonfile()
-            itemremove = [vname for vname in data if not os.path.exists(vname)]
-            for item in itemremove:
-                data.pop(item)
-            save_jsonfile(data)
-            sublime.status_message("Change List History is rebuilt successfully.")
