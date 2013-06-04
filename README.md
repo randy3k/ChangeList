@@ -7,21 +7,21 @@ Installation
 ------------
 1. Via [Package Control](http://wbond.net/sublime_packages/package_control)
 
-2. Install keymap
+2. Change keymap, ignore this if you want to stay with the original keys. The User Key Bindings file can be accessed from Preferences -> Key Bindings - User.
 
         [
             { "keys": ["ctrl+;"], "command": "jump_to_change", "args": {"move": 1}},
             { "keys": ["ctrl+,"], "command": "jump_to_change", "args": {"move": -1}},
             { "keys": ["ctrl+."], "command": "jump_to_change", "args": {"index": 0}}
         ]
-[Vintage](https://github.com/sublimehq/Vintage)
+For [Vintage](https://github.com/sublimehq/Vintage), ignore this if you don't know what it is.
 
         [
             { "keys": ["g",";"], "command": "jump_to_change", "args": {"move": 1}, "context": [{"key": "setting.command_mode"}]},
             { "keys": ["g",","], "command": "jump_to_change", "args": {"move": -1}, "context": [{"key": "setting.command_mode"}]},
             { "keys": ["g","."], "command": "jump_to_change", "args": {"index": -1}, "context": [{"key": "setting.command_mode"}]}
         ]
-[Vintageous](https://github.com/guillermooo/Vintageous?source=c)
+For [Vintageous](https://github.com/guillermooo/Vintageous?source=c), ignore this if you don't know what it is.
 
         [
             { "keys": ["g",";"], "command": "jump_to_change", "args": {"move": 1}, "context": [{"key": "setting.command_mode"}]},
