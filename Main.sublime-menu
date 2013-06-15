@@ -1,0 +1,26 @@
+[
+   {
+        "id": "goto",
+        "children":
+        [
+            { "caption": "-", "id" : "changelist"},
+            {
+                "caption": "Change List Back",
+                "command": "jump_to_change",
+                "args": {"move": -1}
+            },
+            {
+                "caption": "Change List Forward",
+                "command": "jump_to_change",
+                "args": {"move": 1}
+            },
+            {
+                "caption": "Change List Newest",
+                "command": "jump_to_change",
+                "args": {"index": -1}
+            }
+        ]
+    }
+
+
+]
