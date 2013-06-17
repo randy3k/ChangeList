@@ -205,6 +205,10 @@ class ShowChangeList(sublime_plugin.WindowCommand):
         view.run_command("jump_to_change", {"index" : -action-1})
 
 class MaintainChangeList(sublime_plugin.WindowCommand):
+
+    def show_quick_panel(self, options, done):
+        sublime.set_timeout(lambda: self.window.show_quick_panel(options, done), 10)
+
     def run(self):
         view = self.window.active_view()
         if view.is_scratch() or view.settings().get('is_widget'): return
@@ -212,11 +216,21 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             fname = os.path.basename(view.file_name())
         except:
             fname = "untitled"
-        self.window.show_quick_panel(["Rebuild History", "Clear History - "+fname, "Clear All History"], self.on_done)
+        self.show_quick_panel(["Rebuild History", "Clear History - "+fname, "Clear All History"], self.confirm)
 
-    def on_done(self, action):
+    def confirm(self, action):
+        if action<0: return
+        self.action = action
+        self.show_quick_panel(["Cancel", "Apply"], self.on_done)
+
+    def on_done(self, confirm):
         view = self.window.active_view()
+        if confirm<=0:
+            self.run()
+            return
+
         global clist_dict
+        action = self.action
         if action==0:
             data = load_jsonfile()
             for item in [item for item in data if not os.path.exists(item)]:
