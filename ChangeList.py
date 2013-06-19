@@ -24,7 +24,10 @@ class CList():
 
         if self.key_list:
             last_sel = view.get_regions(self.key_list[-1])
+            # dont push key if no jump
             if last_sel == region_list: return
+
+            # delete last key if same line
             if len(last_sel) == len(region_list):
                 if all([view.rowcol(i.begin())[0]==view.rowcol(j.begin())[0] for i,j in zip(last_sel, region_list)]):
                     self.key_counter -= 1
@@ -44,15 +47,16 @@ class CList():
         if self.key_counter == 0:
             self.reload_keys()
             self.key_counter += 1
-        return str(self.key_counter)
+        return "cl"+str(self.key_counter)
 
     def reload_keys(self, sel_list=None):
         view = self.view
         if not sel_list: sel_list = [self.view.get_regions(key) for key in self.key_list]
         for i,sel in enumerate(sel_list):
-            view.erase_regions(str(i+1))
-            view.add_regions(str(i+1), sel, "")
-        self.key_list = [str(s) for s in range(len(sel_list)+1)[1:]]
+            view.erase_regions("cl"+str(i+1))
+            view.add_regions("cl"+str(i+1), sel, "")
+        self.key_list = ["cl"+str(i+1) for i in range(len(sel_list))]
+        # print(self.key_list)
         self.key_counter = len(sel_list)
 
 
@@ -76,6 +80,7 @@ class CList():
         self.key_list = new_key_list
 
     def goto(self, index):
+        # print(self.key_list)
         view = self.view
         if index>=0 or index< -len(self.key_list): return
         self.pointer = index
@@ -124,6 +129,7 @@ def get_clist(view):
         f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
         try:
             if vname in data:
+                print("Reloading keys...")
                 sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
                 this_clist.reload_keys(sel_list)
         except:
