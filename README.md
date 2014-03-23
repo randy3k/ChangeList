@@ -14,33 +14,6 @@ Installation
             { "keys": ["ctrl+,"], "command": "jump_to_change", "args": {"move": 1}},
             { "keys": ["ctrl+."], "command": "jump_to_change", "args": {"index": -1}}
         ]
-Add [Vintage](https://github.com/sublimehq/Vintage) support of `g+;`, `g+,` and `g+.` (ignore this if you don't know what it is).
-
-        [
-            { "keys": ["g",";"], "command": "jump_to_change", "args": {"move": -1}, "context": [{"key": "setting.command_mode"}]},
-            { "keys": ["g",","], "command": "jump_to_change", "args": {"move": 1}, "context": [{"key": "setting.command_mode"}]},
-            { "keys": ["g","."], "command": "jump_to_change", "args": {"index": -1}, "context": [{"key": "setting.command_mode"}]}
-        ]
-Add [Vintageous](https://github.com/guillermooo/Vintageous?source=c) support of `g+;`, `g+,` and `g+.` (ignore this if you don't know what it is).
-
-        [
-            { "keys": [";"], "command": "jump_to_change", "args": {"move": -1}, "context":
-                [
-                    { "key": "setting.command_mode" }, { "key": "vi_in_key_namespace", "operand": "g" }
-                ]
-            },
-            { "keys": [","], "command": "jump_to_change", "args": {"move": 1}, "context":
-                [
-                    { "key": "setting.command_mode" }, { "key": "vi_in_key_namespace", "operand": "g" }
-                ]
-            },
-            { "keys": ["."], "command": "jump_to_change", "args": {"index": -1}, "context":
-                [
-                    { "key": "setting.command_mode" }, { "key": "vi_in_key_namespace", "operand": "g" }
-                ]
-            }
-        ]
-
 
 Usage
 ------------
