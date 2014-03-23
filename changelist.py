@@ -163,13 +163,6 @@ class CListener(sublime_plugin.EventListener):
 class JumpToChange(sublime_plugin.TextCommand):
     def run(self, _, **kwargs):
         view = self.view
-        # reset vintageous action
-        try:
-            vintage = view.settings().get('vintage')
-            vintage['action'] = None
-            view.settings().set('vintage', vintage)
-        except:
-            pass
 
         if view.is_scratch() or view.settings().get('is_widget'): return
         this_clist = get_clist(view)
