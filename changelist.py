@@ -11,7 +11,9 @@ except:
 is_ST2 = int(sublime.version()) < 3000
 
 key_prefix = "cl"
-CLjson = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
+
+def CLjson():
+    return os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
 
 # Change List object
 class CList():
@@ -20,7 +22,7 @@ class CList():
     pointer = -1
     key_list = []
     dictionary = {}
-
+    
     @classmethod
     def get_clist(cls, view):
         vid = view.id()
@@ -30,7 +32,7 @@ class CList():
         else:
             this_clist = CList(view)
             cls.dictionary[vid] = this_clist
-            jfile = JsonIO(CLjson)
+            jfile = JsonIO(CLjson())
             data = jfile.load(default={})
             f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
             try:
@@ -134,7 +136,7 @@ class CListener(sublime_plugin.EventListener):
     def on_post_save(self, view):
         this_clist = CList.get_clist(view)
         vname = view.file_name()
-        jfile = JsonIO(CLjson)
+        jfile = JsonIO(CLjson())
         data = jfile.load(default={})
         f = lambda s: str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
         data[vname] =  {"history": "|".join([":".join([f(s) for s in view.get_regions(key)]) for key in this_clist.key_list])}
@@ -216,7 +218,7 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             return
 
         action = self.action
-        jfile = JsonIO(CLjson)
+        jfile = JsonIO(CLjson())
         if action==0:
             data = jfile.load(default={})
             for item in [item for item in data if not os.path.exists(item)]:
