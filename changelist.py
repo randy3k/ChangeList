@@ -4,6 +4,9 @@ import sys
 import json
 import codecs
 
+is_ST2 = int(sublime.version()) < 3000
+key_prefix = "cl"
+
 # clist_dict = {}
 if not 'clist_dict' in globals(): clist_dict = {}
 
@@ -47,16 +50,15 @@ class CList():
         if self.key_counter == 0:
             self.reload_keys()
             self.key_counter += 1
-        return "cl"+str(self.key_counter)
+        return key_prefix+str(self.key_counter)
 
     def reload_keys(self, sel_list=None):
         view = self.view
         if not sel_list: sel_list = [self.view.get_regions(key) for key in self.key_list]
         for i,sel in enumerate(sel_list):
-            view.erase_regions("cl"+str(i+1))
-            view.add_regions("cl"+str(i+1), sel, "")
-        self.key_list = ["cl"+str(i+1) for i in range(len(sel_list))]
-        # print(self.key_list)
+            view.erase_regions(key_prefix+str(i+1))
+            view.add_regions(key_prefix+str(i+1), sel, "")
+        self.key_list = [key_prefix+str(i+1) for i in range(len(sel_list))]
         self.key_counter = len(sel_list)
 
 
@@ -86,9 +88,14 @@ class CList():
         self.pointer = index
         sel = view.get_regions(self.key_list[index])
         view.sel().clear()
-        view.show(sel[0], True)
         for s in sel:
             view.sel().add(s)
+        view.set_viewport_position((view.viewport_position()[0], 0))
+        row, col = view.rowcol(view.sel()[-1].end())
+        view.show(view.text_point(row+5,col), False)
+        # to reactivate cursor
+        view.run_command("move", {"by": "characters", "forward" : False})
+        view.run_command("move", {"by": "characters", "forward" : True})
 
 def load_jsonfile():
     jsonFilepath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
@@ -143,9 +150,6 @@ class CListener(sublime_plugin.EventListener):
         this_clist.remove_empty_keys()
         this_clist.push_key()
         this_clist.trim_keys()
-        # print(this_clist, this_clist.key_list)
-        # for key in this_clist.key_list:
-        #     print(view.get_regions(key))
 
     def on_post_save(self, view):
         this_clist = get_clist(view)
@@ -177,11 +181,7 @@ class JumpToChange(sublime_plugin.TextCommand):
         else:
             return
         if index>=0 or index< -len(this_clist.key_list): return
-        # print(len(this_clist.key_list))
         this_clist.goto(index)
-        # to reactivate cursor
-        view.run_command("move", {"by": "characters", "forward" : False})
-        view.run_command("move", {"by": "characters", "forward" : True})
         sublime.status_message("@[%s]" % str(-index-1))
 
 class ShowChangeList(sublime_plugin.WindowCommand):
@@ -192,16 +192,22 @@ class ShowChangeList(sublime_plugin.WindowCommand):
         if not this_clist.key_list: return
         def f(i,key):
             begin = view.get_regions(key)[0].begin()
-            return "[%2d] %3d: %s" % (i, view.rowcol(begin)[0]+1, view.substr(view.line(begin)))
-        self.window.show_quick_panel([ f(i,key)
-                    for i,key in enumerate(reversed(this_clist.key_list))], self.on_done)
+            return "%3d: %s" % (view.rowcol(begin)[0]+1, view.substr(view.line(begin)).strip())
+        display_list = [ f(i,key) for i,key in enumerate(reversed(this_clist.key_list))]
+        self.savept = [s for s in view.sel()]
+        if is_ST2:
+            self.window.show_quick_panel(display_list, self.on_done, sublime.MONOSPACE_FONT)
+        else:
+            self.window.show_quick_panel(display_list, self.on_done, sublime.MONOSPACE_FONT, on_highlight=self.on_done)
 
     def on_done(self, action):
         view = self.window.active_view()
-        this_clist = get_clist(view)
-        if action==-1: return
-        # print(-action-1)
+        if action==-1: 
+            view.sel().clear()
+            for s in self.savept: view.sel().add(s)
+            return
         view.run_command("jump_to_change", {"index" : -action-1})
+
 
 class MaintainChangeList(sublime_plugin.WindowCommand):
 
