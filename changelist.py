@@ -3,12 +3,15 @@ import os
 import sys
 import json
 import codecs
+try:
+    from .jsonio import JsonIO
+except:
+    from jsonio import JsonIO
 
 is_ST2 = int(sublime.version()) < 3000
-key_prefix = "cl"
 
-# clist_dict = {}
-if not 'clist_dict' in globals(): clist_dict = {}
+key_prefix = "cl"
+CLjson = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
 
 # Change List object
 class CList():
@@ -16,6 +19,28 @@ class CList():
     key_counter = 0
     pointer = -1
     key_list = []
+    dictionary = {}
+
+    @classmethod
+    def get_clist(cls, view):
+        vid = view.id()
+        vname = view.file_name()
+        if vid in cls.dictionary:
+            this_clist = cls.dictionary[vid]
+        else:
+            this_clist = CList(view)
+            cls.dictionary[vid] = this_clist
+            jfile = JsonIO(CLjson)
+            data = jfile.load(default={})
+            f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
+            try:
+                if vname in data:
+                    print("Reloading keys...")
+                    sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
+                    this_clist.reload_keys(sel_list)
+            except:
+                print("Reload keys failed!")
+        return this_clist
 
     def __init__(self, view):
         self.view = view
@@ -97,71 +122,27 @@ class CList():
         view.run_command("move", {"by": "characters", "forward" : False})
         view.run_command("move", {"by": "characters", "forward" : True})
 
-def load_jsonfile():
-    jsonFilepath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
-    if os.path.exists(jsonFilepath):
-        jsonFile = codecs.open(jsonFilepath, "r+", encoding="utf-8")
-        try:
-            data = json.load(jsonFile)
-        except:
-            print("Not json file!")
-            data = {}
-        jsonFile.close()
-    else:
-        jsonFile = codecs.open(jsonFilepath, "w+", encoding="utf-8")
-        data = {}
-        jsonFile.close()
-    return data
-
-def save_jsonfile(data):
-    jsonFilepath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
-    jsonFile = codecs.open(jsonFilepath, "w+", encoding="utf-8")
-    jsonFile.write(json.dumps(data, ensure_ascii=False))
-    jsonFile.close()
-
-def remove_jsonfile():
-    jsonFilepath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
-    if os.path.exists(jsonFilepath): os.remove(jsonFilepath)
-
-def get_clist(view):
-    global clist_dict
-    vid = view.id()
-    vname = view.file_name()
-    if vid in clist_dict:
-        this_clist = clist_dict[vid]
-    else:
-        this_clist = CList(view)
-        clist_dict[vid] = this_clist
-        data = load_jsonfile()
-        f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
-        try:
-            if vname in data:
-                print("Reloading keys...")
-                sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
-                this_clist.reload_keys(sel_list)
-        except:
-            print("Reload keys failed!")
-    return this_clist
 
 class CListener(sublime_plugin.EventListener):
     def on_modified(self, view):
         if view.is_scratch() or view.settings().get('is_widget'): return
-        this_clist = get_clist(view)
+        this_clist = CList.get_clist(view)
         this_clist.remove_empty_keys()
         this_clist.push_key()
         this_clist.trim_keys()
 
     def on_post_save(self, view):
-        this_clist = get_clist(view)
+        this_clist = CList.get_clist(view)
         vname = view.file_name()
-        data = load_jsonfile()
+        jfile = JsonIO(CLjson)
+        data = jfile.load(default={})
         f = lambda s: str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
         data[vname] =  {"history": "|".join([":".join([f(s) for s in view.get_regions(key)]) for key in this_clist.key_list])}
-        save_jsonfile(data)
+        jfile.save(data, indent=0)
 
     def on_close(self, view):
         vid = view.id()
-        if vid in clist_dict: clist_dict.pop(vid)
+        if vid in CList.dictionary: CList.dictionary.pop(vid)
 
 
 class JumpToChange(sublime_plugin.TextCommand):
@@ -169,7 +150,7 @@ class JumpToChange(sublime_plugin.TextCommand):
         view = self.view
 
         if view.is_scratch() or view.settings().get('is_widget'): return
-        this_clist = get_clist(view)
+        this_clist = CList.get_clist(view)
         if not this_clist.key_list: return
         if 'move' in kwargs:
             move = kwargs['move']
@@ -188,7 +169,7 @@ class ShowChangeList(sublime_plugin.WindowCommand):
     def run(self):
         view = self.window.active_view()
         if view.is_scratch() or view.settings().get('is_widget'): return
-        this_clist = get_clist(view)
+        this_clist = CList.get_clist(view)
         if not this_clist.key_list: return
         def f(i,key):
             begin = view.get_regions(key)[0].begin()
@@ -234,25 +215,25 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             self.run()
             return
 
-        global clist_dict
         action = self.action
+        jfile = JsonIO(CLjson)
         if action==0:
-            data = load_jsonfile()
+            data = jfile.load(default={})
             for item in [item for item in data if not os.path.exists(item)]:
                 data.pop(item)
-            save_jsonfile(data)
+            jfile.save(data, indent=0)
             sublime.status_message("Change List History is rebuilt successfully.")
         elif action==1:
             vid = view.id()
             vname = view.file_name()
-            if vid in clist_dict: clist_dict.pop(vid)
+            if vid in CList.dictionary: CList.dictionary.pop(vid)
             if vname:
                 data = load_jsonfile()
                 if vname in data:
                     data.pop(vname)
-                    save_jsonfile(data)
+                    jfile.save(data, indent=0)
             sublime.status_message("Change List (this file) is cleared successfully.")
         elif action==2:
-            clist_dict = {}
-            remove_jsonfile()
+            CList.dictionary = {}
+            jfile.remove()
             sublime.status_message("Change List (all file) is cleared successfully.")
