@@ -108,7 +108,7 @@ class CList():
                 view.erase_regions(key)
         self.key_list = new_key_list
 
-    def goto(self, index):
+    def goto(self, index, show_at_bottom=False):
         # print(self.key_list)
         view = self.view
         if index>=0 or index< -len(self.key_list): return
@@ -117,9 +117,12 @@ class CList():
         view.sel().clear()
         for s in sel:
             view.sel().add(s)
-        view.set_viewport_position((view.viewport_position()[0], 0))
-        row, col = view.rowcol(view.sel()[-1].end())
-        view.show(view.text_point(row+5,col), False)
+        if show_at_bottom:
+            view.set_viewport_position((view.viewport_position()[0], 0))
+            row, col = view.rowcol(view.sel()[-1].end())
+            view.show(view.text_point(row+5,col), False)
+        else:
+            view.show_at_center(view.sel()[0])
         # to reactivate cursor
         view.run_command("move", {"by": "characters", "forward" : False})
         view.run_command("move", {"by": "characters", "forward" : True})
@@ -164,7 +167,8 @@ class JumpToChange(sublime_plugin.TextCommand):
         else:
             return
         if index>=0 or index< -len(this_clist.key_list): return
-        this_clist.goto(index)
+        show_at_bottom = kwargs['show_at_bottom'] if 'show_at_bottom' in kwargs else False
+        this_clist.goto(index, show_at_bottom)
         sublime.status_message("@[%s]" % str(-index-1))
 
 class ShowChangeList(sublime_plugin.WindowCommand):
@@ -189,7 +193,7 @@ class ShowChangeList(sublime_plugin.WindowCommand):
             view.sel().clear()
             for s in self.savept: view.sel().add(s)
             return
-        view.run_command("jump_to_change", {"index" : -action-1})
+        view.run_command("jump_to_change", {"index" : -action-1, 'show_at_bottom': True})
 
 
 class MaintainChangeList(sublime_plugin.WindowCommand):
