@@ -204,7 +204,7 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             fname = os.path.basename(view.file_name())
         except:
             fname = "untitled"
-        self.show_quick_panel(["Rebuild History", "Clear History - "+fname, "Clear All History"], self.confirm)
+        self.show_quick_panel(["Rebuild Change List", "Clean up this file", "Clean up all files"], self.confirm)
 
     def confirm(self, action):
         if action<0: return
@@ -224,7 +224,7 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             for item in [item for item in data if not os.path.exists(item)]:
                 data.pop(item)
             jfile.save(data, indent=0)
-            sublime.status_message("Change List History is rebuilt successfully.")
+            sublime.status_message("Change List is rebuilt.")
         elif action==1:
             vid = view.id()
             vname = view.file_name()
@@ -234,8 +234,8 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
                 if vname in data:
                     data.pop(vname)
                     jfile.save(data, indent=0)
-            sublime.status_message("Change List (this file) is cleared successfully.")
+            sublime.status_message("Change List (this file) is cleaned up.")
         elif action==2:
             CList.dictionary = {}
             jfile.remove()
-            sublime.status_message("Change List (all file) is cleared successfully.")
+            sublime.status_message("Change List (all file) is cleaned up.")
