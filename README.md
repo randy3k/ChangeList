@@ -5,9 +5,11 @@ It remembers where changes were made.
 
 Installation
 ------------
-1. Via [Package Control](http://wbond.net/sublime_packages/package_control)
+Via [Package Control](http://wbond.net/sublime_packages/package_control)
 
-2. Change key bindings, ignore this if you want to stay with the original keys. The User Key Bindings file can be accessed from Preferences -> Key Bindings - User.
+Change key bindings
+------------
+Ignore this if you want to stay with the original keys. The User Key Bindings file can be accessed from Preferences -> Key Bindings - User.
 
         [
             { "keys": ["ctrl+;"], "command": "jump_to_change", "args": {"move": -1}},
@@ -20,9 +22,9 @@ Usage
 
 * Launch ``Change List: Show`` in Command Palette to show Change List.
 * Launch ``Change List: Maintenance`` in Command Palette to maintain Change List.
-* ``ctrl+;``  go to previous edited location
-* ``ctrl+,``  go to next edited location
-* ``ctrl+.``  go to the last edited location
+* ``ctrl+;``  go to previous change
+* ``ctrl+,``  go to next chnage
+* ``ctrl+.``  go to the lastest change
 
 Others
 -----------
