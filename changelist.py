@@ -22,7 +22,7 @@ class CList():
     pointer = -1
     key_list = []
     dictionary = {}
-    
+
     @classmethod
     def get_clist(cls, view):
         vid = view.id()
@@ -32,16 +32,7 @@ class CList():
         else:
             this_clist = CList(view)
             cls.dictionary[vid] = this_clist
-            jfile = JsonIO(CLjson())
-            data = jfile.load(default={})
-            f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
-            try:
-                if vname in data:
-                    print("Reloading keys...")
-                    sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
-                    this_clist.reload_keys(sel_list)
-            except:
-                print("Reload keys failed!")
+            this_clist.load()
         return this_clist
 
     def __init__(self, view):
@@ -59,7 +50,8 @@ class CList():
 
             # delete last key if same line
             if len(last_sel) == len(region_list):
-                if all([view.rowcol(i.begin())[0]==view.rowcol(j.begin())[0] for i,j in zip(last_sel, region_list)]):
+                if all([view.rowcol(i.begin())[0]==view.rowcol(j.begin())[0] \
+                        for i,j in zip(last_sel, region_list)]):
                     self.key_counter -= 1
                     self.key_list.pop(-1)
 
@@ -127,6 +119,28 @@ class CList():
         view.run_command("move", {"by": "characters", "forward" : False})
         view.run_command("move", {"by": "characters", "forward" : True})
 
+    def save(self):
+        view = self.view
+        vname = view.file_name()
+        jfile = JsonIO(CLjson())
+        data = jfile.load(default={})
+        f = lambda s: str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
+        data[vname] =  {"history": "|".join(
+                [":".join([f(s) for s in view.get_regions(key)]) for key in self.key_list]
+        )}
+        jfile.save(data, indent=0)
+
+    def load(self):
+        view = self.view
+        vname = view.file_name()
+        jfile = JsonIO(CLjson())
+        data = jfile.load(default={})
+        f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
+        if vname in data:
+            print("Reloading keys...")
+            sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
+            self.reload_keys(sel_list)
+
 
 class CListener(sublime_plugin.EventListener):
     def on_modified(self, view):
@@ -137,13 +151,8 @@ class CListener(sublime_plugin.EventListener):
         this_clist.trim_keys()
 
     def on_post_save(self, view):
-        this_clist = CList.get_clist(view)
-        vname = view.file_name()
-        jfile = JsonIO(CLjson())
-        data = jfile.load(default={})
-        f = lambda s: str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
-        data[vname] =  {"history": "|".join([":".join([f(s) for s in view.get_regions(key)]) for key in this_clist.key_list])}
-        jfile.save(data, indent=0)
+        CList.get_clist(view).save()
+
 
     def on_close(self, view):
         vid = view.id()
@@ -159,7 +168,8 @@ class JumpToChange(sublime_plugin.TextCommand):
         if not this_clist.key_list: return
         if 'move' in kwargs:
             move = kwargs['move']
-            if move == -1 and this_clist.pointer == -1 and view.get_regions(this_clist.key_list[-1]) != list(view.sel()):
+            if move == -1 and this_clist.pointer == -1 and \
+                    view.get_regions(this_clist.key_list[-1]) != list(view.sel()):
                 move = 0
             index = this_clist.pointer+move
         elif 'index' in kwargs:
@@ -189,7 +199,7 @@ class ShowChangeList(sublime_plugin.WindowCommand):
 
     def on_done(self, action):
         view = self.window.active_view()
-        if action==-1: 
+        if action==-1:
             view.sel().clear()
             for s in self.savept: view.sel().add(s)
             return
@@ -234,12 +244,12 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             vname = view.file_name()
             if vid in CList.dictionary: CList.dictionary.pop(vid)
             if vname:
-                data = load_jsonfile()
+                data = jfile.load(default={})
                 if vname in data:
                     data.pop(vname)
                     jfile.save(data, indent=0)
-            sublime.status_message("Change List (this file) is cleaned up.")
+            sublime.status_message("Change List for this file is emptied.")
         elif action==2:
             CList.dictionary = {}
             jfile.remove()
-            sublime.status_message("Change List (all file) is cleaned up.")
+            sublime.status_message("Change List is emptied.")
