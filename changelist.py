@@ -93,7 +93,6 @@ class CList():
         view = self.view
         new_key_list = []
         for key in self.key_list:
-            # print(view.get_regions(key))
             if view.get_regions(key):
                 new_key_list.append(key)
             else:
@@ -101,7 +100,6 @@ class CList():
         self.key_list = new_key_list
 
     def goto(self, index, show_at_bottom=False):
-        # print(self.key_list)
         view = self.view
         if index>=0 or index< -len(self.key_list): return
         self.pointer = index
@@ -124,7 +122,8 @@ class CList():
         vname = view.file_name()
         jfile = JsonIO(CLjson())
         data = jfile.load(default={})
-        f = lambda s: str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
+        def f(s):
+            str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
         data[vname] =  {"history": "|".join(
                 [":".join([f(s) for s in view.get_regions(key)]) for key in self.key_list]
         )}
@@ -135,9 +134,10 @@ class CList():
         vname = view.file_name()
         jfile = JsonIO(CLjson())
         data = jfile.load(default={})
-        f = lambda s: sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
+        def f(s):
+            sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
         if vname in data:
-            print("Reloading keys...")
+            print("Change List: Reloading keys...")
             sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
             self.reload_keys(sel_list)
 
@@ -193,9 +193,11 @@ class ShowChangeList(sublime_plugin.WindowCommand):
         display_list = [ f(i,key) for i,key in enumerate(reversed(this_clist.key_list))]
         self.savept = [s for s in view.sel()]
         if is_ST2:
-            self.window.show_quick_panel(display_list, self.on_done, sublime.MONOSPACE_FONT)
+            self.window.show_quick_panel(display_list,
+                    self.on_done, sublime.MONOSPACE_FONT)
         else:
-            self.window.show_quick_panel(display_list, self.on_done, sublime.MONOSPACE_FONT, on_highlight=self.on_done)
+            self.window.show_quick_panel(display_list,
+                    self.on_done, sublime.MONOSPACE_FONT, on_highlight=self.on_done)
 
     def on_done(self, action):
         view = self.window.active_view()
@@ -218,7 +220,8 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             fname = os.path.basename(view.file_name())
         except:
             fname = "untitled"
-        self.show_quick_panel(["Rebuild Change List", "Clean up this file", "Clean up all files"], self.confirm)
+        self.show_quick_panel(["Rebuild Change List", "Clean up this file",
+                "Clean up all files"], self.confirm)
 
     def confirm(self, action):
         if action<0: return
