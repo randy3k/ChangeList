@@ -21,7 +21,7 @@ Usage
 ------------
 
 * Launch ``Change List: Show`` in Command Palette to show Change List.
-* Launch ``Change List: Maintenance`` in Command Palette to maintain Change List.
+* Launch ``Change List: Clean`` in Command Palette to clean or rebuild Change List.
 * ``ctrl+;``  go to previous change
 * ``ctrl+,``  go to next chnage
 * ``ctrl+.``  go to the lastest change
