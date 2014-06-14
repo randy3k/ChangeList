@@ -123,7 +123,7 @@ class CList():
         jfile = JsonIO(CLjson())
         data = jfile.load(default={})
         def f(s):
-            str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
+            return str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
         data[vname] =  {"history": "|".join(
                 [":".join([f(s) for s in view.get_regions(key)]) for key in self.key_list]
         )}
@@ -135,7 +135,7 @@ class CList():
         jfile = JsonIO(CLjson())
         data = jfile.load(default={})
         def f(s):
-            sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
+            return sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
         if vname in data:
             print("Change List: Reloading keys...")
             sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
