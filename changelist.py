@@ -137,7 +137,6 @@ class CList():
         def f(s):
             return sublime.Region(int(s[0]),int(s[1])) if len(s)==2 else sublime.Region(int(s[0]),int(s[0]))
         if vname in data:
-            print("Change List: Reloading keys...")
             sel_list = [[f(s.split(",")) for s in sel.split(":")] for sel in data[vname]['history'].split("|")]
             self.reload_keys(sel_list)
 
