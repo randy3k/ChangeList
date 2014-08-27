@@ -3,17 +3,40 @@ import os
 import sys
 import json
 import codecs
-try:
-    from .jsonio import JsonIO
-except:
-    from jsonio import JsonIO
 
-is_ST2 = int(sublime.version()) < 3000
+class Jfile:
+    def __init__(self, fpath, encoding="utf-8"):
+        self.encoding = encoding
+        self.fpath = fpath
 
+    def load(self, default=[]):
+        self.fdir = os.path.dirname(self.fpath)
+        if not os.path.isdir(self.fdir):
+            os.makedirs(self.fdir)
+        if os.path.exists(self.fpath):
+            f = codecs.open(self.fpath, "r+", encoding=self.encoding)
+            try:
+                data = json.load(f)
+            except:
+                data = default
+            f.close()
+        else:
+            f = codecs.open(self.fpath, "w+", encoding=self.encoding)
+            data = default
+            f.close()
+        return data
+
+    def save(self, data, indent=4):
+        f = codecs.open(self.fpath, "w+", encoding=self.encoding)
+        f.write(json.dumps(data, ensure_ascii=False, indent=indent))
+        f.close()
+
+    def remove(self):
+        if os.path.exists(self.fpath): os.remove(self.fpath)
+
+
+st2 = int(sublime.version()) < 3000
 key_prefix = "cl"
-
-def CLjson():
-    return os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
 
 # Change List object
 class CList():
@@ -37,6 +60,7 @@ class CList():
 
     def __init__(self, view):
         self.view = view
+        self.jpath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
 
     def push_key(self):
         view = self.view
@@ -120,7 +144,7 @@ class CList():
     def save(self):
         view = self.view
         vname = view.file_name()
-        jfile = JsonIO(CLjson())
+        jfile = Jfile(self.jpath)
         data = jfile.load(default={})
         def f(s):
             return str(s.begin())+","+str(s.end()) if s.begin()!=s.end() else str(s.begin())
@@ -132,7 +156,7 @@ class CList():
     def load(self):
         view = self.view
         vname = view.file_name()
-        jfile = JsonIO(CLjson())
+        jfile = Jfile(self.jpath)
         data = jfile.load(default={})
         def f(s):
             return sublime.Region(int(s[0]),int(s[1])) if len(s)==2 \
@@ -193,7 +217,7 @@ class ShowChangeList(sublime_plugin.WindowCommand):
             return "%3d: %s" % (view.rowcol(begin)[0]+1, view.substr(view.line(begin)).strip())
         display_list = [ f(i,key) for i,key in enumerate(reversed(this_clist.key_list))]
         self.savept = [s for s in view.sel()]
-        if is_ST2:
+        if st2:
             self.window.show_quick_panel(display_list,
                     self.on_done, sublime.MONOSPACE_FONT)
         else:
@@ -209,7 +233,7 @@ class ShowChangeList(sublime_plugin.WindowCommand):
         view.run_command("jump_to_change", {"index" : -action-1, 'show_at_bottom': True})
 
 
-class MaintainChangeList(sublime_plugin.WindowCommand):
+class CleanChangeList(sublime_plugin.WindowCommand):
 
     def show_quick_panel(self, options, done):
         sublime.set_timeout(lambda: self.window.show_quick_panel(options, done), 10)
@@ -236,7 +260,7 @@ class MaintainChangeList(sublime_plugin.WindowCommand):
             return
 
         action = self.action
-        jfile = JsonIO(CLjson())
+        jfile = Jfile(self.jpath)
         if action==0:
             data = jfile.load(default={})
             for item in [item for item in data if not os.path.exists(item)]:
