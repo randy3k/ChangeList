@@ -242,6 +242,7 @@ class CleanChangeList(sublime_plugin.WindowCommand):
         sublime.set_timeout(lambda: self.window.show_quick_panel(options, done), 10)
 
     def run(self):
+        self.jpath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
         view = self.window.active_view()
         if view.is_scratch() or view.settings().get('is_widget'): return
         try:
