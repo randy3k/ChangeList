@@ -12,9 +12,9 @@ Usage
 
 * Launch ``Change List: Show`` in Command Palette to show Change List.
 * Launch ``Change List: Clean`` in Command Palette to clean or rebuild Change List.
-* ``ctrl+;``  go to previous change
-* ``ctrl+,``  go to next chnage
-* ``ctrl+.``  go to the lastest change
+* <kbd>ctrl</kbd>+<kbd>;</kbd>  go to previous change
+* <kbd>ctrl</kbd>+<kbd>,</kbd>  go to next chnage
+* <kbd>ctrl</kbd>+<kbd>.</kbd>  go to the lastest change
 
 
 Change key bindings
