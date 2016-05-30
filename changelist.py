@@ -230,9 +230,13 @@ class ShowChangeList(sublime_plugin.WindowCommand):
         if not this_clist.key_list:
             return
 
+        # Detect width of viewport and modify output text accordingly for better viewing
+        viewWidth      = view.viewport_extent()[0]
+        viewTextLength = int(viewWidth*200/2000)
+
         def f(i, key):
             begin = view.get_regions(key)[0].begin()
-            return "%3d: %s" % (view.rowcol(begin)[0]+1, view.substr(view.line(begin)).strip())
+            return "%3d: %s" % (view.rowcol(begin)[0]+1, view.substr(view.line(begin)).strip()[:viewTextLength])
         display_list = [f(i, key) for i, key in enumerate(reversed(this_clist.key_list))]
         self.savept = [s for s in view.sel()]
         if st2:
