@@ -58,14 +58,20 @@ class CList():
         if vid in cls.dictionary:
             this_clist = cls.dictionary[vid]
         else:
-            this_clist = CList(view)
+            try:
+                this_clist = CList(view)
+            except:
+                print("Change List is not ready!")
             cls.dictionary[vid] = this_clist
             this_clist.load()
         return this_clist
 
     def __init__(self, view):
         self.view = view
-        self.jpath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
+        if sublime.packages_path():
+            self.jpath = os.path.join(sublime.packages_path(), 'User', 'ChangeList.json')
+        else:
+            raise
 
     def push_key(self):
         view = self.view
