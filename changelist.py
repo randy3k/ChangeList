@@ -40,7 +40,6 @@ class Jfile:
             os.remove(self.fpath)
 
 
-st2 = int(sublime.version()) < 3000
 key_prefix = "cl"
 
 
@@ -184,7 +183,7 @@ class CList():
 
 
 class CListener(sublime_plugin.EventListener):
-    def on_modified(self, view):
+    def on_modified_async(self, view):
         if view.is_scratch() or view.settings().get('is_widget'):
             return
         this_clist = CList.get_clist(view)
@@ -192,10 +191,10 @@ class CListener(sublime_plugin.EventListener):
         this_clist.push_key()
         this_clist.trim_keys()
 
-    def on_post_save(self, view):
+    def on_post_save_async(self, view):
         CList.get_clist(view).save()
 
-    def on_close(self, view):
+    def on_close_async(self, view):
         vid = view.id()
         if vid in CList.dictionary:
             CList.dictionary.pop(vid)
@@ -247,13 +246,10 @@ class ShowChangeList(sublime_plugin.WindowCommand):
             return "%3d: %s" % (line, content)
         display_list = [f(i, key) for i, key in enumerate(reversed(this_clist.key_list))]
         self.savept = [s for s in view.sel()]
-        if st2:
-            self.window.show_quick_panel(display_list, self.on_done, sublime.MONOSPACE_FONT)
-        else:
-            self.window.show_quick_panel(
-                display_list,
-                self.on_done, sublime.MONOSPACE_FONT, on_highlight=self.on_done
-            )
+        self.window.show_quick_panel(
+            display_list,
+            self.on_done, sublime.MONOSPACE_FONT, on_highlight=self.on_done
+        )
 
     def on_done(self, action):
         view = self.window.active_view()
