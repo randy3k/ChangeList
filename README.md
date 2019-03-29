@@ -1,3 +1,8 @@
+DEPRECATED:
+
+Use Sublime 3.2's `ctrl+,` and `ctrl+.` instead.
+
+
 The missing Change List for Sublime Text 2/3 - History List, Last Edit ...
 ====================
 It remembers where changes were made.
